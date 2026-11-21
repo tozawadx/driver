@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>戸沢村デマンドバス 運転手用 v8</title>
+<style>
+:root{--navy:#17445d;--blue:#246b8e;--pale:#edf5f8;--line:#d7e1e6;--ink:#20313a;--muted:#647780;--green:#26734d;--red:#b43b36;--orange:#a45b12}*{box-sizing:border-box}body{margin:0;background:#f3f6f7;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{background:var(--navy);color:white;padding:15px 16px}header h1{font-size:19px;margin:0 0 4px}header p{font-size:12px;margin:0;opacity:.9}main{max-width:850px;margin:14px auto;padding:0 10px 34px}.panel{background:white;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}h2{font-size:16px;color:var(--navy);margin:0 0 11px}.field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}.field label{font-size:13px;font-weight:700}select,input{width:100%;min-height:46px;border:1px solid #bdcbd2;border-radius:8px;padding:9px;font-size:16px;background:white;color:var(--ink)}button{border:0;border-radius:9px;padding:11px 14px;font-size:15px;font-weight:700;min-height:46px;background:var(--blue);color:white;cursor:pointer}button:disabled{opacity:.4}button.secondary{background:#e9f0f3;color:var(--navy)}button.plus{background:var(--green);font-size:27px;min-width:68px;min-height:62px}button.minus{background:#fff0ef;color:var(--red);font-size:27px;min-width:68px;min-height:62px}.muted{font-size:12px;color:var(--muted);line-height:1.6}.notice{padding:10px;border-radius:8px;background:#fff8e8;border:1px solid #f0dfb6;font-size:12px;line-height:1.6}.tripline{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}.pill{background:var(--pale);color:var(--navy);border-radius:20px;padding:6px 10px;font-size:12px;font-weight:700}.status{padding:10px;border-radius:9px;background:#f1f5f6;margin:10px 0;font-weight:700;font-size:14px}.status.running{background:#e7f5ec;color:#17643b}.status.finished{background:#e9edf0;color:#53616a}.stop{border:1px solid var(--line);border-radius:11px;padding:12px;margin:10px 0;background:white}.stop.active{border:3px solid var(--blue);background:#f1f8fb}.stophead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px}.stopname{font-size:19px;font-weight:800}.seq{font-size:11px;color:var(--muted)}.expected{font-size:12px;color:var(--muted);background:#f6f8f9;border-radius:7px;padding:7px;margin-bottom:9px}.counts{display:grid;grid-template-columns:1fr 1fr;gap:10px}.counter{border-radius:11px;padding:11px 8px;text-align:center;border:2px solid transparent;min-width:0}.counter.boarding{background:#eaf7ef;border-color:#83c69b}.counter.alighting{background:#edf4fc;border-color:#8bb5e2}.counter b{display:block;font-size:34px;margin:5px}.counter.boarding b{color:#176b3b}.counter.alighting b{color:#185b9a}.counter-title{display:flex;align-items:center;justify-content:center;gap:5px;font-size:16px;font-weight:900;min-height:32px}.counter.boarding .counter-title{color:#176b3b}.counter.alighting .counter-title{color:#185b9a}.counter-hint{font-size:11px;font-weight:700;margin:2px 0 7px}.counterbuttons{display:flex;justify-content:center;gap:7px}.counter button{min-width:0;flex:1;max-width:76px;min-height:58px;font-size:25px}.counter.boarding button.plus{background:#197642}.counter.alighting button.plus{background:#246db2}.counter.boarding button.minus{background:#fff;color:#176b3b;border:1px solid #83c69b}.counter.alighting button.minus{background:#fff;color:#185b9a;border:1px solid #8bb5e2}.stopactions{display:flex;gap:7px;margin-top:9px}.stopactions button{flex:1;font-size:13px;min-height:40px;padding:8px}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.hidden{display:none!important}.currentbox{border:2px solid var(--blue);border-radius:10px;padding:12px;background:#f1f8fb}.currentbox .big{font-size:22px;font-weight:800;color:var(--navy)}@media(min-width:650px){.stoplist{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stop{margin:0}.stop.current{grid-column:1/-1}}
+
+/* v4: 運転手向け大型・縦並び操作 */
+.counts{grid-template-columns:1fr;gap:12px}
+.counter{display:grid;grid-template-columns:minmax(0,1fr) minmax(112px,34%);grid-template-rows:auto auto;align-items:center;column-gap:12px;padding:14px}
+.counter-title{grid-column:1;grid-row:1;font-size:21px;justify-content:flex-start;min-height:36px}
+.counter-hint{grid-column:1;grid-row:2;font-size:14px;text-align:left;margin:0}
+.counter b{grid-column:1;grid-row:3;font-size:48px;text-align:left;margin:5px 0 0}
+.counterbuttons{grid-column:2;grid-row:1 / span 3;display:flex;flex-direction:column;justify-content:center;gap:9px;width:100%}
+.counter button.plus{order:1}
+.counter button.minus{order:2}
+.counter button{width:100%;max-width:none;min-height:76px;flex:none;font-size:36px;border-radius:12px;touch-action:manipulation}
+.counter button:active{transform:scale(.98);filter:brightness(.92)}
+.counter.boarding button.plus{background:#176b3b}
+.counter.boarding button.minus{background:#4b9368}
+.counter.alighting button.plus{background:#185b9a}
+.counter.alighting button.minus{background:#477eaf}
+.stopname{font-size:22px}
+.expected{font-size:15px;padding:10px}
+@media(max-width:420px){
+  .counter{grid-template-columns:minmax(0,1fr) 116px;padding:12px;column-gap:8px}
+  .counter-title{font-size:20px}
+  .counter b{font-size:46px}
+  .counter button{min-height:72px;font-size:34px}
+}
+
+/* v6: 保存エラー・入力ロック表示 */
+.alert{padding:12px;border-radius:10px;background:#fdecea;border:2px solid #e8a39d;color:#7d211c;font-size:14px;line-height:1.6;margin-bottom:12px}
+.lock{padding:10px 12px;border-radius:9px;background:#fff8e8;border:1px solid #f0dfb6;color:#7a4a0c;font-size:14px;font-weight:700;margin:8px 0}
+.counter button:disabled{filter:grayscale(.6);cursor:not-allowed}
+.stop{scroll-margin-top:10px}
+
+/* v7: 自動受信 */
+.sync{padding:11px 12px;border-radius:9px;font-weight:700;font-size:14px;line-height:1.6;margin-bottom:10px;background:#f1f5f6;color:#53616a}
+.sync.ok{background:#e7f5ec;color:#17643b}
+.sync.updated{background:#e3f0fb;color:#185b9a;border:2px solid #8bb5e2}
+.sync.warn{background:#fff8e8;color:#7a4a0c;border:1px solid #f0dfb6}
+.sync.err{background:#fdecea;color:#7d211c;border:1px solid #e8a39d}
+details{margin-top:12px;border:1px solid var(--line);border-radius:9px;padding:0 12px}
+details[open]{padding-bottom:12px}
+/* v8: 乗降実績の送信状況 */
+.resultsync{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:11px 12px;border-radius:9px;font-weight:700;font-size:14px;line-height:1.6;margin:10px 0}
+.resultsync span{flex:1 1 220px}
+.resultsync.ok{background:#e7f5ec;color:#17643b}
+.resultsync.wait{background:#fff8e8;color:#7a4a0c;border:1px solid #f0dfb6}
+.resultsync.err{background:#fdecea;color:#7d211c;border:1px solid #e8a39d}
+.resultsync button{min-height:40px;font-size:13px;padding:8px 12px}
+summary{cursor:pointer;font-size:14px;font-weight:700;color:var(--navy);padding:12px 0;min-height:44px}
+</style></head><body>
+<header><h1>戸沢村デマンドバス　乗降者数入力</h1><p>運転手用・連携試作版 v8</p></header><main>
+<div id="saveWarn" class="alert hidden" role="alert"><b>この端末に保存できませんでした。</b><br>入力した人数は画面上には残っていますが、ページを閉じると消えるおそれがあります。ブラウザのプライベートモードを解除するか、空き容量を確認してください。早めに「乗降実績をCSV出力」で控えを保存してください。</div>
+<section class="panel"><h2>① 運行データ（事務所から自動で届きます）</h2>
+<div id="syncStatus" class="sync">準備中…</div>
+<div class="actions"><button id="refreshBtn" disabled>最新の運行データを取得</button></div>
+<div id="loadStatus" class="muted" style="margin-top:8px">運行データはまだ届いていません。</div>
+<p class="muted">画面を開いている間は1分ごとに自動で確認します。事務所が予約を変更して送信すると、自動で表示が変わります。</p>
+<details id="settingsBox"><summary>接続設定（最初に1回だけ）</summary>
+ <div class="field"><label for="apiUrl">連携用URL</label><input id="apiUrl" type="url" placeholder="https://script.google.com/macros/s/……/exec"></div>
+ <div class="field"><label for="apiKey">合言葉</label><input id="apiKey" type="password" autocomplete="off"></div>
+ <div class="field"><label for="routeSel">この車両</label><select id="routeSel"><option value="1">1号車・いきいき百年の里線</option><option value="2">2号車・やまなみロード線</option></select></div>
+ <div class="field"><label for="dateSel">表示する日付（通常は空欄＝今日）</label><input id="dateSel" type="date"></div>
+ <div class="actions"><button id="saveSettings">設定を保存して受信</button></div>
+ <p class="muted">URLと合言葉は事務所の担当者から受け取ってください。日付は練習・確認用です。運行時は空欄にしてください。</p>
+</details>
+<details id="fileBox"><summary>通信できないとき：JSONファイルを読み込む</summary>
+ <div class="field"><label for="file">JSONファイル</label><input id="file" type="file" accept=".json,application/json"></div>
+ <p class="muted">予約管理画面の「連携データをファイル出力（JSON・予備）」で作ったファイルを選びます。ファイルを読み込むと自動受信は止まります。「最新の運行データを取得」を押すと自動受信に戻ります。</p>
+</details>
+</section>
+<section class="panel"><h2>② 本日の運行</h2><div class="field"><label for="tripSelect">便（出発時刻）</label><select id="tripSelect" disabled><option>運行データの受信を待っています</option></select></div><div id="tripInfo" class="tripline"></div><div id="operationStatus" class="status">運行開始前</div><div class="actions"><button id="startBtn" disabled>運行開始</button><button id="finishBtn" class="secondary" disabled>運行終了</button></div><div id="resultSync" class="resultsync hidden"></div><p class="muted">「運行終了」を押すと、その便の乗降実績を事務所へ自動で送信します。電波がないときは端末に保存しておき、つながった時点で自動で送信します。運行開始・終了の操作時刻も、この端末に保存します。選んだ便と停留所も保存され、ページを開き直しても元の状態に戻ります。</p></section>
+<section class="panel" id="currentPanel"><h2>③ 現在の停留所</h2><div class="field"><label for="currentStop">入力する停留所を選択</label><select id="currentStop" disabled><option>便を選択してください</option></select></div><div class="currentbox"><div class="muted">選択中の停留所</div><div id="currentName" class="big">未選択</div><div id="currentExpected" class="muted">予約予定：—</div></div><p class="muted">現在地のGPS自動判定は次の開発段階です。今回は停車した停留所を選んで入力します。</p></section>
+<section class="panel"><h2>④ 停留所ごとの乗降人数</h2><p class="muted">必ず安全な場所に停車してから操作してください。走行中は操作しないでください。実際に乗車・降車した人数を入力します。＋／－は1人ずつ変更します。予約予定人数と実績は別々に記録します。</p><div class="tripline"><span class="pill" style="background:#eaf7ef;color:#176b3b">緑：乗車（乗る人）</span><span class="pill" style="background:#edf4fc;color:#185b9a">青：降車（降りる人）</span></div><div id="inputLock" class="lock hidden"></div><div id="stopList" class="muted">運行データの受信を待っています。</div><div class="actions" style="margin-top:12px"><button class="secondary" id="exportCsv" disabled>乗降実績をCSV出力</button><button class="secondary" id="exportJson" disabled>乗降実績をJSON保存</button></div></section>
+<section class="panel"><div class="notice"><b>試作版の注意</b><br>・運行データは事務所の「車両タブレットへ送信」でGoogleスプレッドシートに保存され、この画面が自動で受け取ります。<br>・乗降実績は「運行終了」を押した時点で事務所へ自動送信します。終了後に「運行を再開」して修正した場合は、再度「運行終了」を押すと送り直します。<br>・kintone同期、GPS自動判定は未実装です。<br>・予約人数は乗車・降車停留所ごとの参考値です。実績は運転手が入力してください。<br>・乗降人数は「運行中」の便だけ入力できます。終了後に修正する場合は「運行を再開」を押してください。<br>・実際の運行には使用せず、架空データで操作を確認してください。</div></section>
+</main><script>
+const $=id=>document.getElementById(id);
+const KEYS={records:'tozawa_driver_records_v2',states:'tozawa_driver_states_v2',payload:'tozawa_driver_payload_v2',ui:'tozawa_driver_ui_v2',sync:'tozawa_driver_sync_v1',outbox:'tozawa_driver_outbox_v1'};
+const ROUTE_NAMES={'1':'いきいき百年の里線','2':'やまなみロード線'};
+const POLL_MS=60000;
+let payload=null,currentTrip=null,currentIndex=0,fetching=false;
+function loadKey(k,def){try{const v=JSON.parse(localStorage.getItem(k)||'null');return v??def}catch(e){return def}}
+let records=loadKey(KEYS.records,{}),states=loadKey(KEYS.states,{}),ui=loadKey(KEYS.ui,{tripId:'',stopIndex:{}}),sync=loadKey(KEYS.sync,{api:'',key:'',routeId:'1',date:''});
+const savedPayload=loadKey(KEYS.payload,null);
+if(!ui||typeof ui!=='object')ui={tripId:'',stopIndex:{}};if(!ui.stopIndex||typeof ui.stopIndex!=='object')ui.stopIndex={};
+if(!sync||typeof sync!=='object')sync={api:'',key:'',routeId:'1',date:''};
+// 送信待ちの乗降実績 {tripId:{result,queuedAt,lastError}}
+let outbox=loadKey(KEYS.outbox,{}),sending=false;if(!outbox||typeof outbox!=='object')outbox={};
+
+// 保存に失敗しても画面上の値は残し、警告を表示する
+function persist(){try{localStorage.setItem(KEYS.records,JSON.stringify(records));localStorage.setItem(KEYS.states,JSON.stringify(states));localStorage.setItem(KEYS.ui,JSON.stringify(ui));localStorage.setItem(KEYS.sync,JSON.stringify(sync));localStorage.setItem(KEYS.outbox,JSON.stringify(outbox));if(payload)localStorage.setItem(KEYS.payload,JSON.stringify(payload));$('saveWarn').classList.add('hidden');return true}catch(e){console.error(e);$('saveWarn').classList.remove('hidden');return false}}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function now(){return new Date().toLocaleString('ja-JP')}
+function hhmm(d){return d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}
+function fmtIso(s){const d=new Date(s);return isNaN(d)?'':d.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}
+function today(){return new Date().toLocaleDateString('sv-SE')}
+function targetDate(){return sync.date||today()}
+function configured(){return !!(sync.api&&sync.key)}
+function toMin(t){const m=String(t||'').match(/^(\d{1,2}):(\d{2})$/);return m?Number(m[1])*60+Number(m[2]):9999}
+function key(){return currentTrip?String(currentTrip.tripId):''}
+function tripDir(t){return t?.direction||payload?.direction||''}
+function stateOf(){return states[key()]||{status:'before'}}
+function isRunning(){return stateOf().status==='running'}
+function expectedFor(stopName,kind){return expectedIn(currentTrip,stopName,kind)}
+function expectedIn(trip,stopName,kind){return (trip?.bookings||[]).filter(b=>(kind==='boarding'?b.boarding:b.alighting)===stopName).reduce((n,b)=>n+Number(b.count||0),0)}
+function expectedLabel(stopName){return (currentTrip?.plannedStops||[]).filter(s=>s.stopName===stopName).length>1?'予約予定（同名停留所の合計）':'予約予定'}
+function saveUi(){if(!currentTrip)return;ui.tripId=key();ui.stopIndex[key()]=currentIndex;persist()}
+function setSync(cls,text){const el=$('syncStatus');el.className='sync '+cls;el.textContent=text}
+
+// 運行データの検証：tripId・visitId の欠落と重複を検出する
+function validatePayload(obj,allowEmpty){
+ if(!obj||obj.schema!=='tozawa-demandbus-trip-v1')return '運行データの形式（schema）が異なります。';
+ if(!Array.isArray(obj.trips))return '便のデータが正しくありません。';
+ if(!obj.trips.length&&!allowEmpty)return '便のデータが含まれていません。';
+ const tripIds=new Set();
+ for(const [i,t] of obj.trips.entries()){
+  const label=`${i+1}便目（${t?.departureTime??'時刻不明'}発）`;
+  if(!t||!Array.isArray(t.bookings)||!Array.isArray(t.plannedStops))return `${label}の予約データまたは停留所データが正しくありません。`;
+  const tid=String(t.tripId??'').trim();
+  if(!tid)return `${label}に運行ID（tripId）がありません。`;
+  if(tripIds.has(tid))return `運行ID「${tid}」が複数の便で重複しています。`;
+  tripIds.add(tid);
+  const visitIds=new Set();
+  for(const [j,s] of t.plannedStops.entries()){
+   const vid=String(s?.visitId??'').trim();
+   if(!vid)return `${label}の${j+1}番目の停留所に停留所訪問ID（visitId）がありません。`;
+   if(visitIds.has(vid))return `${label}で停留所訪問ID「${vid}」が重複しています。`;
+   visitIds.add(vid);
+  }
+ }
+ return '';
+}
+
+// 往路・復路など複数の運行データを1日分にまとめ、出発時刻順に並べる
+function mergePayloads(list,date,routeId){
+ const valid=(list||[]).filter(p=>p&&p.schema==='tozawa-demandbus-trip-v1'&&p.serviceDate===date&&Array.isArray(p.trips));
+ const trips=[];valid.forEach(p=>p.trips.forEach(t=>trips.push({...t,direction:t.direction||p.direction})));
+ trips.sort((a,b)=>toMin(a.departureTime)-toMin(b.departureTime)||String(a.direction).localeCompare(String(b.direction)));
+ const withTrips=valid.filter(p=>p.trips.length),first=withTrips[0]||valid[0];
+ return {schema:'tozawa-demandbus-trip-v1',source:'cloud',serviceDate:date,routeId,routeName:first?.routeName||ROUTE_NAMES[routeId]||'',vehicle:first?.vehicle||`${routeId}号車`,direction:[...new Set(withTrips.map(p=>p.direction))].join('・'),updatedAt:valid.map(p=>p.createdAt||'').sort().pop()||'',trips};
+}
+
+function applyPayload(obj){
+ payload=obj;
+ const src=obj.source==='cloud'?'':'（ファイル）';
+ $('loadStatus').textContent=`${obj.serviceDate}／${obj.vehicle}／${obj.routeName}${obj.direction?'／'+obj.direction:''}／${obj.trips.length}便${src}`;
+ if(!obj.trips.length){$('tripSelect').innerHTML='<option>この日の予約はまだありません</option>';$('tripSelect').disabled=true;currentTrip=null;render();return}
+ $('tripSelect').innerHTML=obj.trips.map((t,i)=>`<option value="${i}">${esc(t.departureTime)}発　${esc(tripDir(t))}（予約${t.bookings.length}件）</option>`).join('');
+ $('tripSelect').disabled=false;
+ const restored=obj.trips.findIndex(t=>String(t.tripId)===ui.tripId);
+ $('tripSelect').value=String(restored>=0?restored:0);
+ selectTrip();
+}
+
+// ===== 自動受信 =====
+async function fetchTrips(userAction){
+ if(!configured()){setSync('warn','接続設定がまだです。下の「接続設定」を開いて、事務所から受け取ったURLと合言葉を入力してください。');$('settingsBox').open=true;return}
+ if(fetching)return;
+ if(userAction)ui.manual=false;
+ if(ui.manual)return;
+ fetching=true;$('refreshBtn').disabled=true;$('refreshBtn').textContent='受信中…';
+ const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),15000);
+ try{
+  const date=targetDate();
+  const url=`${sync.api}?action=getTrips&date=${encodeURIComponent(date)}&routeId=${encodeURIComponent(sync.routeId)}&key=${encodeURIComponent(sync.key)}`;
+  const res=await fetch(url,{signal:ctrl.signal,cache:'no-store'});
+  const data=await res.json();
+  if(!data.ok)throw Error(data.error||'サーバーでエラーが発生しました');
+  const merged=mergePayloads(data.payloads,date,sync.routeId);
+  const err=validatePayload(merged,true);if(err)throw Error('受信したデータに問題があります：'+err);
+  const firstLoad=!payload||payload.source!=='cloud'||payload.serviceDate!==merged.serviceDate||payload.routeId!==merged.routeId;
+  const changed=firstLoad||JSON.stringify(payload)!==JSON.stringify(merged);
+  const t=hhmm(new Date()),sentAt=merged.updatedAt?`／事務所の送信 ${fmtIso(merged.updatedAt)}`:'';
+  if(changed){applyPayload(merged);persist()}
+  if(!merged.trips.length)setSync('warn',`${date} の運行データはまだ届いていません（${t} 確認）。事務所が送信すると自動で表示されます。`);
+  else if(changed&&!firstLoad)setSync('updated',`事務所から運行データが更新されました（${t}${sentAt}）。予約人数を確認してください。（タップで閉じる）`);
+  else if(changed)setSync('ok',`運行データを受信しました（${t}${sentAt}）`);
+  else if(!$('syncStatus').classList.contains('updated'))setSync('ok',`最新の状態です（${t} 確認${sentAt}）`);
+ }catch(e){
+  console.error(e);
+  const msg=e.name==='AbortError'?'応答がありません（電波状況を確認してください）':e.message;
+  setSync('err',`受信できませんでした：${msg}${payload?'。前回受信したデータを表示しています。':''}`);
+ }finally{clearTimeout(timer);fetching=false;$('refreshBtn').disabled=!configured();$('refreshBtn').textContent='最新の運行データを取得'}
+}
+
+function selectTrip(){
+ currentTrip=payload?.trips?.[Number($('tripSelect').value)]||null;
+ currentIndex=currentTrip?Number(ui.stopIndex[key()]||0):0;
+ saveUi();render();
+}
+
+function selectStop(i,scroll){
+ currentIndex=i;saveUi();render();
+ if(scroll){const el=document.getElementById('stop-'+i);if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}
+}
+
+function render(){
+ const ok=!!currentTrip;
+ $('exportCsv').disabled=!ok;$('exportJson').disabled=!ok;$('currentStop').disabled=!ok;
+ if(!ok){$('resultSync').classList.add('hidden');$('startBtn').disabled=true;$('finishBtn').disabled=true;$('tripInfo').innerHTML='';$('inputLock').classList.add('hidden');$('operationStatus').className='status';$('operationStatus').textContent='運行開始前';$('currentStop').innerHTML='<option>便を選択してください</option>';$('stopList').textContent=payload&&!payload.trips.length?'この日の予約はまだ届いていません。事務所が送信すると自動で表示されます。':'運行データの受信を待っています。';$('currentName').textContent='未選択';$('currentExpected').textContent='予約予定：—';return}
+ $('tripInfo').innerHTML=[payload.serviceDate,payload.vehicle,payload.routeName,tripDir(currentTrip),currentTrip.departureTime+'発'].filter(Boolean).map(x=>`<span class="pill">${esc(x)}</span>`).join('');
+
+ // 運行状態に応じてボタンを切り替える
+ const st=stateOf(),running=st.status==='running',finished=st.status==='finished';
+ $('operationStatus').className='status '+(running?'running':finished?'finished':'');
+ $('operationStatus').textContent=running?`運行中（開始 ${st.startedAt}${st.resumedAt?` ／ 再開 ${st.resumedAt}`:''}）`:finished?`運行終了（開始 ${st.startedAt||'—'} ／ 終了 ${st.finishedAt}）`:'運行開始前';
+ renderResultSync(st);
+ $('startBtn').textContent=finished?'運行を再開':'運行開始';
+ $('startBtn').disabled=running;
+ $('finishBtn').disabled=!running;
+ const lock=$('inputLock');
+ if(running){lock.classList.add('hidden')}else{lock.classList.remove('hidden');lock.textContent=finished?'この便は運行終了済みのため、人数は変更できません。修正する場合は②の「運行を再開」を押してください。':'運行開始前のため、人数はまだ入力できません。②の「運行開始」を押してください。'}
+
+ const stops=currentTrip.plannedStops;
+ $('currentStop').innerHTML=stops.map((s,i)=>`<option value="${i}">${esc(s.seq)}. ${esc(s.stopName)}</option>`).join('');
+ if(stops.length){currentIndex=Math.min(Math.max(0,currentIndex),stops.length-1);$('currentStop').value=String(currentIndex)}
+ $('currentName').textContent=stops[currentIndex]?.stopName||'対象停留所なし';updateCurrentExpected();
+ const d=records[key()]||{},dis=running?'':' disabled';
+ $('stopList').innerHTML='<div class="stoplist">'+stops.map((s,i)=>{const r=d[s.visitId]||{boarding:0,alighting:0};const eb=expectedFor(s.stopName,'boarding'),ea=expectedFor(s.stopName,'alighting');const id=esc(s.visitId);return `<div class="stop ${i===currentIndex?'active current':''}" id="stop-${i}"><div class="stophead"><span class="stopname">${esc(s.stopName)}</span><span class="seq">運行順 ${esc(s.seq)}</span></div><div class="expected">${expectedLabel(s.stopName)}：乗車 ${eb}人 ／ 降車 ${ea}人</div><div class="counts"><div class="counter boarding"><div class="counter-title">↑ 乗る人</div><div class="counter-hint">乗車人数・実績</div><b>${r.boarding}<small style="font-size:15px"> 人</small></b><div class="counterbuttons"><button class="minus" aria-label="乗車人数を1人減らす" data-kind="boarding" data-delta="-1" data-id="${id}"${dis}>－</button><button class="plus" aria-label="乗車人数を1人増やす" data-kind="boarding" data-delta="1" data-id="${id}"${dis}>＋</button></div></div><div class="counter alighting"><div class="counter-title">↓ 降りる人</div><div class="counter-hint">降車人数・実績</div><b>${r.alighting}<small style="font-size:15px"> 人</small></b><div class="counterbuttons"><button class="minus" aria-label="降車人数を1人減らす" data-kind="alighting" data-delta="-1" data-id="${id}"${dis}>－</button><button class="plus" aria-label="降車人数を1人増やす" data-kind="alighting" data-delta="1" data-id="${id}"${dis}>＋</button></div></div></div><div class="stopactions"><button class="secondary" data-current="${i}">この停留所を選択</button></div></div>`}).join('')+'</div>';
+ document.querySelectorAll('[data-kind]').forEach(btn=>btn.onclick=()=>changeCount(btn.dataset.id,btn.dataset.kind,Number(btn.dataset.delta)));
+ document.querySelectorAll('[data-current]').forEach(btn=>btn.onclick=()=>selectStop(Number(btn.dataset.current),true));
+}
+
+function updateCurrentExpected(){const s=currentTrip?.plannedStops?.[currentIndex];$('currentExpected').textContent=s?`${expectedLabel(s.stopName)}：乗車 ${expectedFor(s.stopName,'boarding')}人 ／ 降車 ${expectedFor(s.stopName,'alighting')}人`:'予約予定：—'}
+
+function changeCount(id,kind,delta){
+ if(!isRunning())return; // 運行中以外は変更しない
+ const k=key();if(!records[k])records[k]={};if(!records[k][id])records[k][id]={boarding:0,alighting:0};
+ records[k][id][kind]=Math.max(0,Number(records[k][id][kind]||0)+delta);
+ persist();render();
+}
+
+function startOrResume(){
+ const k=key(),st=stateOf();
+ if(st.status==='running')return;
+ if(st.status==='finished'){
+  if(!confirm('この便は運行終了済みです。運行を再開しますか？\n（終了時刻を取り消し、再開時刻を記録します）'))return;
+  const {finishedAt,resultSentAt,...rest}=st;
+  states[k]={...rest,status:'running',resumedAt:now(),previousFinishedAt:finishedAt,previousResultSentAt:resultSentAt};
+  delete outbox[k]; // 修正中は送信しない（再度「運行終了」で送り直す）
+ }else{
+  if(!confirm('この便の運行を開始しますか？'))return;
+  states[k]={status:'running',startedAt:now()};
+ }
+ persist();render();
+}
+function finish(){
+ const k=key(),st=stateOf();
+ if(st.status!=='running')return;
+ if(!confirm('この便の運行を終了しますか？\n乗降実績を事務所へ送信します。'))return;
+ states[k]={...st,status:'finished',finishedAt:now()};
+ delete states[k].resultSentAt;
+ outbox[k]={result:buildResult(currentTrip),queuedAt:now(),lastError:''};
+ persist();render();
+ flushOutbox();
+}
+
+// ===== 乗降実績の送信（送信待ちを順に送る。失敗したら次の機会に再送） =====
+function renderResultSync(st){
+ const el=$('resultSync'),k=key();
+ if(st.status!=='finished'){el.classList.add('hidden');return}
+ el.classList.remove('hidden');
+ const box=outbox[k];
+ if(box){
+  const reason=!configured()?'接続設定がないため送信できません。①の「接続設定」を入力してください。':box.lastError?`送信できませんでした（${box.lastError}）。電波が戻ると自動で送信します。`:sending?'事務所へ送信中…':'事務所へ送信待ちです。電波が戻ると自動で送信します。';
+  el.className='resultsync '+(box.lastError||!configured()?'err':'wait');
+  el.innerHTML=`<span>乗降実績：${esc(reason)}</span>${configured()?'<button class="secondary" id="retrySend">今すぐ送信</button>':''}`;
+  const b=$('retrySend');if(b){b.disabled=sending;b.onclick=()=>flushOutbox()}
+ }else if(st.resultSentAt){
+  el.className='resultsync ok';el.innerHTML=`<span>乗降実績：事務所へ送信済み（${esc(st.resultSentAt)}）</span>`;
+ }else{
+  el.className='resultsync wait';el.innerHTML='<span>乗降実績：送信記録がありません。「運行を再開」→「運行終了」で送信できます。</span>';
+ }
+}
+async function flushOutbox(){
+ if(sending||!configured())return;
+ const ids=Object.keys(outbox);if(!ids.length)return;
+ sending=true;render();
+ for(const tid of ids){
+  const box=outbox[tid];if(!box)continue;
+  const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),20000);
+  try{
+   const res=await fetch(sync.api,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'putResults',key:sync.key,result:box.result}),signal:ctrl.signal,cache:'no-store'});
+   const data=await res.json();
+   if(!data.ok)throw Error(data.error||'サーバーでエラーが発生しました');
+   if(outbox[tid]===box){delete outbox[tid];if(states[tid])states[tid].resultSentAt=now()}
+  }catch(e){
+   console.error(e);
+   if(outbox[tid]===box)box.lastError=e.name==='AbortError'?'応答がありません':(e.message==='Failed to fetch'?'通信できません':e.message);
+  }finally{clearTimeout(timer)}
+ }
+ sending=false;persist();render();
+}
+
+// ===== 予備：JSONファイル読み込み =====
+$('file').onchange=async e=>{
+ const f=e.target.files[0];if(!f)return;
+ let reason='';
+ try{
+  let obj;try{obj=JSON.parse(await f.text())}catch(_){throw Error('JSONファイルとして読み取れません。')}
+  reason=validatePayload(obj,false);if(reason)throw Error(reason);
+  obj={...obj,source:'file'};
+  ui.manual=true;applyPayload(obj);persist();
+  setSync('warn','ファイルから読み込んだデータを表示しています（自動受信は停止中）。「最新の運行データを取得」を押すと自動受信に戻ります。');
+  $('fileBox').open=false;
+ }catch(err){
+  console.error(err);
+  alert(`ファイルを読み込めませんでした。\n${reason||err.message}\n\n予約管理画面の「連携データをファイル出力（JSON）」で作成したファイルか確認してください。`);
+ }finally{e.target.value=''}
+};
+
+// ===== 接続設定 =====
+function fillSettings(){$('apiUrl').value=sync.api||'';$('apiKey').value=sync.key||'';$('routeSel').value=sync.routeId||'1';$('dateSel').value=sync.date||''}
+$('saveSettings').onclick=()=>{
+ const api=$('apiUrl').value.trim(),k=$('apiKey').value.trim();
+ if(!/^https:\/\/script\.google\.com\/.+\/exec$/.test(api)){alert('連携用URLは「https://script.google.com/」で始まり「/exec」で終わるURLを入力してください。');return}
+ if(!k){alert('合言葉を入力してください。');return}
+ sync={api,key:k,routeId:$('routeSel').value,date:$('dateSel').value};
+ persist();$('settingsBox').open=false;
+ fetchTrips(true);
+};
+
+$('tripSelect').onchange=selectTrip;
+$('currentStop').onchange=()=>selectStop(Number($('currentStop').value),true);
+$('startBtn').onclick=startOrResume;$('finishBtn').onclick=finish;
+$('refreshBtn').onclick=()=>fetchTrips(true);
+
+function download(name,content,type){const blob=new Blob([content],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function resultRows(trip){const tid=String(trip.tripId),d=records[tid]||{};return trip.plannedStops.map(s=>({serviceDate:payload.serviceDate,vehicle:payload.vehicle,route:payload.routeName,direction:tripDir(trip),departureTime:trip.departureTime,tripId:tid,visitId:s.visitId,sequence:s.seq,stopName:s.stopName,expectedBoarding:expectedIn(trip,s.stopName,'boarding'),expectedAlighting:expectedIn(trip,s.stopName,'alighting'),actualBoarding:d[s.visitId]?.boarding||0,actualAlighting:d[s.visitId]?.alighting||0}))}
+function buildResult(trip){const tid=String(trip.tripId);return {schema:'tozawa-demandbus-results-v2',serviceDate:payload.serviceDate,routeId:String(payload.routeId||sync.routeId||''),vehicle:payload.vehicle,route:payload.routeName,direction:tripDir(trip),departureTime:trip.departureTime,tripId:tid,operationStatus:states[tid]||{status:'before'},createdAt:new Date().toISOString(),records:resultRows(trip)}}
+function fileBase(){return `乗降実績_${payload.serviceDate}_${payload.vehicle}_${tripDir(currentTrip)}_${String(currentTrip.departureTime).replace(':','')}`}
+$('exportCsv').onclick=()=>{const rows=[['利用日','車両','路線','方向','便','運行ID','停留所訪問ID','運行順','停留所','乗車予定人数','降車予定人数','実際の乗車人数','実際の降車人数'],...resultRows(currentTrip).map(r=>Object.values(r))];const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');download(fileBase()+'.csv',csv,'text/csv;charset=utf-8')};
+$('exportJson').onclick=()=>{download(fileBase()+'.json',JSON.stringify(buildResult(currentTrip),null,2),'application/json;charset=utf-8')};
+
+// ===== 起動時 =====
+fillSettings();
+if(savedPayload&&!validatePayload(savedPayload,true)){applyPayload(savedPayload)}else{render()}
+if(!configured()){setSync('warn','接続設定がまだです。下の「接続設定」を開いて、事務所から受け取ったURLと合言葉を入力してください。');$('settingsBox').open=true}
+else if(ui.manual){setSync('warn','ファイルから読み込んだデータを表示しています（自動受信は停止中）。「最新の運行データを取得」を押すと自動受信に戻ります。');$('refreshBtn').disabled=false}
+else{$('refreshBtn').disabled=false;fetchTrips(false)}
+// 画面を開いている間は定期的に確認。タブレットの画面を戻したときも確認する
+function autoFetch(){if(document.visibilityState!=='visible'||!configured())return;flushOutbox();if(!ui.manual)fetchTrips(false)}
+setInterval(autoFetch,POLL_MS);
+document.addEventListener('visibilitychange',autoFetch);
+window.addEventListener('online',()=>{flushOutbox();if(configured()&&!ui.manual)fetchTrips(false)});
+flushOutbox(); // 起動時に送信待ちがあれば送る
+// 「更新されました」の表示はタップで消す
+$('syncStatus').onclick=()=>{if($('syncStatus').classList.contains('updated'))setSync('ok','更新内容を確認しました。');};
+</script></body></html>

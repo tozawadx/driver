@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>戸沢村デマンドバス 運転手用 v9</title>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>戸沢村デマンドバス 運転手用 v10</title>
 <style>
 :root{--navy:#17445d;--blue:#246b8e;--pale:#edf5f8;--line:#d7e1e6;--ink:#20313a;--muted:#647780;--green:#176b3b;--bluec:#185b9a;--red:#b43b36}
 *{box-sizing:border-box}
@@ -88,6 +88,27 @@ main{max-width:640px;margin:0 auto;padding:12px 12px 40px}
 .stoplist .b{color:var(--green)}.stoplist .a{color:var(--bluec)}
 .syncmini{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
 
+/* 車両の選択 */
+.vehicle{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.vlabel{font-size:13px;font-weight:800;color:var(--navy);white-space:nowrap}
+.seg{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{background:#fff;color:var(--navy);border:2px solid var(--line);min-height:56px;padding:6px;line-height:1.3}
+.seg button small{display:block;font-size:11px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.seg button[aria-pressed="true"] small{color:#d5e6ee}
+.opdrv{display:block;font-size:13px;font-weight:700;color:var(--navy);margin-top:3px}
+/* 運転手の選択 */
+.dlgwrap{position:fixed;inset:0;z-index:30;background:#0000008c;display:flex;align-items:center;justify-content:center;padding:14px}
+.dlg{background:#fff;border-radius:16px;padding:18px;width:min(440px,100%);max-height:90vh;overflow-y:auto}
+.dlg h3{margin:0 0 4px;font-size:19px;color:var(--navy)}
+#dlgSub{white-space:pre-line;margin:0}
+.drvlist{display:grid;gap:8px;margin:12px 0}
+.drv{display:flex;align-items:center;gap:12px;background:#fff;color:var(--ink);border:2px solid var(--line);text-align:left;min-height:58px;padding:8px 14px}
+.drv .did{font-size:18px;font-weight:900;color:var(--navy);min-width:56px}
+.drv .dnick{font-size:17px;font-weight:700;flex:1;min-width:0;word-break:break-all}
+.drv[aria-pressed="true"]{background:#e3f0fb;border-color:var(--blue)}
+.drv[aria-pressed="true"]::after{content:"✓";color:var(--blue);font-weight:900;font-size:22px}
+.dlg .mactions{margin-top:6px}
 /* メニュー */
 .overlay{position:fixed;inset:0;background:#00000059;z-index:20}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,92vw);background:#f3f6f7;z-index:21;overflow-y:auto;box-shadow:-4px 0 18px #0003;transform:translateX(100%);visibility:hidden;transition:transform .2s,visibility .2s}
@@ -108,6 +129,10 @@ main{max-width:640px;margin:0 auto;padding:12px 12px 40px}
 <main>
 <div id="saveWarn" class="alert hidden" role="alert"><b>この端末に保存できませんでした。</b><br>入力した人数は画面上には残っていますが、ページを閉じると消えるおそれがあります。ブラウザのプライベートモードを解除するか、空き容量を確認してください。早めにメニュー（☰）の「CSVで保存」で控えを保存してください。</div>
 <div id="syncStatus" class="banner hidden" role="status"></div>
+<section id="vehicleCard" class="vehicle hidden" aria-label="今日の車両">
+ <span class="vlabel">今日の<br>車両</span>
+ <div class="seg" role="group" aria-label="車両の選択"><button id="veh1" aria-pressed="false">1号車<small>いきいき百年の里線</small></button><button id="veh2" aria-pressed="false">2号車<small>やまなみロード線</small></button></div>
+</section>
 
 <div id="setupCard" class="card empty hidden">接続設定がまだです。
 事務所から受け取ったURLと合言葉を入力してください。<br><button id="openSetup">接続設定を開く</button></div>
@@ -137,6 +162,14 @@ main{max-width:640px;margin:0 auto;padding:12px 12px 40px}
 <div id="syncMini" class="syncmini"></div>
 </main>
 
+<div id="driverDlg" class="dlgwrap hidden" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+ <div class="dlg">
+  <h3 id="dlgTitle">運転手を選んでください</h3>
+  <p id="dlgSub" class="muted"></p>
+  <div id="dlgList" class="drvlist"></div>
+  <div class="mactions"><button id="dlgOk">運行開始</button><button id="dlgCancel" class="secondary">やめる</button></div>
+ </div>
+</div>
 <div id="overlay" class="overlay hidden"></div>
 <nav id="drawer" class="drawer" aria-label="メニュー" aria-hidden="true">
  <div class="drawerhead"><span>メニュー</span><button class="iconbtn" id="closeMenu" aria-label="メニューを閉じる">✕</button></div>
@@ -156,10 +189,11 @@ main{max-width:640px;margin:0 auto;padding:12px 12px 40px}
   <h3>接続設定</h3>
   <div class="field"><label for="apiUrl">連携用URL</label><input id="apiUrl" type="url" placeholder="https://script.google.com/macros/s/……/exec"></div>
   <div class="field"><label for="apiKey">合言葉</label><input id="apiKey" type="password" autocomplete="off"></div>
-  <div class="field"><label for="routeSel">この車両</label><select id="routeSel"><option value="1">1号車・いきいき百年の里線</option><option value="2">2号車・やまなみロード線</option></select></div>
+  <div class="field"><label for="deviceType">この端末</label><select id="deviceType"><option value="私物">私物（運転手のスマホ・タブレット）</option><option value="貸与">村から貸与された端末</option></select></div>
   <div class="field"><label for="dateSel">表示する日付（通常は空欄＝今日）</label><input id="dateSel" type="date"></div>
   <div class="mactions"><button id="saveSettings">設定を保存して受信</button></div>
-  <p class="muted">URLと合言葉は事務所の担当者から受け取ってください。日付は練習・確認用です。運行時は空欄にしてください。</p>
+  <p class="muted">URLと合言葉は事務所の担当者から受け取ってください。日付は練習・確認用です。運行時は空欄にしてください。車両は画面の上で選びます。</p>
+  <p class="muted">端末ID：<b id="deviceIdText"></b>（事務所への問い合わせ用）</p>
  </section>
  <section class="msec" id="fileSec">
   <h3>通信できないとき</h3>
@@ -168,25 +202,34 @@ main{max-width:640px;margin:0 auto;padding:12px 12px 40px}
  </section>
  <section class="msec">
   <h3>試作版の注意</h3>
-  <p class="muted" style="margin:0">・「運行開始」を押した便だけ、人数を入力できます。終了後に直すときは「運行を再開」→ 修正 →「運行終了」の順に押すと、事務所の実績が置き換わります。<br>・電波がないときは乗降実績を端末に保存し、つながった時点で自動で送信します。<br>・予約人数は乗車・降車停留所ごとの参考値です。<br>・GPSによる停留所の自動判定、kintone連携は未実装です。<br>・実際の運行には使用せず、架空データで操作を確認してください。</p>
-  <p class="muted">運転手用・連携試作版 v9</p>
+  <p class="muted" style="margin:0">・運行開始のときに、運転手（IDとニックネーム）を選びます。車両は画面の上で選びます。<br>・「運行開始」を押した便だけ、人数を入力できます。終了後に直すときは「運行を再開」→ 修正 →「運行終了」の順に押すと、事務所の実績が置き換わります。<br>・電波がないときは乗降実績を端末に保存し、つながった時点で自動で送信します。<br>・予約人数は乗車・降車停留所ごとの参考値です。<br>・GPSによる停留所の自動判定、kintone連携は未実装です。<br>・実際の運行には使用せず、架空データで操作を確認してください。</p>
+  <p class="muted">運転手用・連携試作版 v10</p>
  </section>
 </nav>
 <script>
 const $=id=>document.getElementById(id);
 // 保存キーは v8 と同じ（v8 の設定・入力途中のデータをそのまま引き継ぐ）
-const KEYS={records:'tozawa_driver_records_v2',states:'tozawa_driver_states_v2',payload:'tozawa_driver_payload_v2',ui:'tozawa_driver_ui_v2',sync:'tozawa_driver_sync_v1',outbox:'tozawa_driver_outbox_v1'};
+const KEYS={records:'tozawa_driver_records_v2',states:'tozawa_driver_states_v2',payload:'tozawa_driver_payload_v2',ui:'tozawa_driver_ui_v2',sync:'tozawa_driver_sync_v1',outbox:'tozawa_driver_outbox_v1',drivers:'tozawa_driver_drivers_v1',device:'tozawa_driver_device_v1'};
+const APP_VERSION='v10';
 const ROUTE_NAMES={'1':'いきいき百年の里線','2':'やまなみロード線'};
 const POLL_MS=60000;
 const MANUAL_MSG='ファイルから読み込んだデータを表示しています（自動受信は停止中）。メニュー（☰）の「最新の運行データを取得」で自動受信に戻ります。';
 let payload=null,currentTrip=null,currentIndex=0,fetching=false;
 function loadKey(k,def){try{const v=JSON.parse(localStorage.getItem(k)||'null');return v??def}catch(e){return def}}
-let records=loadKey(KEYS.records,{}),states=loadKey(KEYS.states,{}),ui=loadKey(KEYS.ui,{tripId:'',stopIndex:{}}),sync=loadKey(KEYS.sync,{api:'',key:'',routeId:'1',date:''});
+let records=loadKey(KEYS.records,{}),states=loadKey(KEYS.states,{}),ui=loadKey(KEYS.ui,{tripId:'',stopIndex:{}}),sync=loadKey(KEYS.sync,{api:'',key:'',routeId:'1',date:'',deviceType:'私物'});
 const savedPayload=loadKey(KEYS.payload,null);
 if(!ui||typeof ui!=='object')ui={tripId:'',stopIndex:{}};if(!ui.stopIndex||typeof ui.stopIndex!=='object')ui.stopIndex={};
-if(!sync||typeof sync!=='object')sync={api:'',key:'',routeId:'1',date:''};
+if(!sync||typeof sync!=='object')sync={api:'',key:'',routeId:'1',date:'',deviceType:'私物'};
+if(sync.deviceType!=='私物'&&sync.deviceType!=='貸与')sync.deviceType='私物';
+if(sync.routeId!=='1'&&sync.routeId!=='2')sync.routeId='1';
 // 送信待ちの乗降実績 {tripId:{result,queuedAt,lastError}}
 let outbox=loadKey(KEYS.outbox,{}),sending=false;if(!outbox||typeof outbox!=='object')outbox={};
+// 端末ID：この端末のブラウザに保存する識別番号（どの端末から届いた実績か分かるように）
+function makeDeviceId(){try{if(crypto.randomUUID)return crypto.randomUUID()}catch(e){}return 'd'+Date.now().toString(36)+Math.random().toString(36).slice(2,10)}
+let deviceId='';try{deviceId=localStorage.getItem(KEYS.device)||''}catch(e){}
+if(!/^[0-9A-Za-z-]{1,40}$/.test(deviceId)){deviceId=makeDeviceId();try{localStorage.setItem(KEYS.device,deviceId)}catch(e){}}
+// 運転手の一覧（事務所がスプレッドシートで管理。通信できないときは前回の一覧を使う）
+let drivers=loadKey(KEYS.drivers,{list:[],at:''});if(!drivers||!Array.isArray(drivers.list))drivers={list:[],at:''};
 
 // 保存に失敗しても画面上の値は残し、警告を表示する
 function persist(){try{localStorage.setItem(KEYS.records,JSON.stringify(records));localStorage.setItem(KEYS.states,JSON.stringify(states));localStorage.setItem(KEYS.ui,JSON.stringify(ui));localStorage.setItem(KEYS.sync,JSON.stringify(sync));localStorage.setItem(KEYS.outbox,JSON.stringify(outbox));if(payload)localStorage.setItem(KEYS.payload,JSON.stringify(payload));$('saveWarn').classList.add('hidden');return true}catch(e){console.error(e);$('saveWarn').classList.remove('hidden');return false}}
@@ -264,6 +307,7 @@ function applyPayload(obj){
 // ===== 自動受信 =====
 async function fetchTrips(userAction){
  if(!configured()){needSetup();return}
+ maybeFetchDrivers(userAction);
  if(fetching)return;
  if(userAction)ui.manual=false;
  if(ui.manual)return;
@@ -305,7 +349,12 @@ function selectStop(i,scroll){
 }
 
 // ===== 画面表示 =====
+function renderVehicle(){
+ $('vehicleCard').classList.toggle('hidden',!configured());
+ ['1','2'].forEach(id=>$('veh'+id).setAttribute('aria-pressed',String(String(sync.routeId)===id)));
+}
 function renderHeader(){
+ renderVehicle();
  const vehicle=payload?.vehicle||`${sync.routeId||'1'}号車`,route=payload?.routeName||ROUTE_NAMES[sync.routeId]||'';
  $('headTitle').textContent=`${vehicle}・${route}`;
  $('headSub').textContent=`${payload?.serviceDate||targetDate()} の運行${sync.date?'（練習用の日付）':''}`;
@@ -327,7 +376,7 @@ function render(){
  // 運行状態に応じて大きなボタンを切り替える
  const st=stateOf(),running=st.status==='running',finished=st.status==='finished';
  $('operationStatus').className='opstatus'+(running?' running':'');
- $('operationStatus').textContent=running?`運行中（${st.resumedAt?'再開 '+timeOf(st.resumedAt):'開始 '+timeOf(st.startedAt)}）`:finished?`運行終了（${timeOf(st.finishedAt)}）`:'運行開始前';
+ $('operationStatus').innerHTML=esc(running?`運行中（${st.resumedAt?'再開 '+timeOf(st.resumedAt):'開始 '+timeOf(st.startedAt)}）`:finished?`運行終了（${timeOf(st.finishedAt)}）`:'運行開始前')+(driverLabel(st)?`<span class="opdrv">運転手　${esc(driverLabel(st))}</span>`:'');
  const mb=$('mainBtn');
  mb.textContent=running?'運行終了':finished?'運行を再開':'運行開始';
  mb.className='mainbtn '+(running?'finish':finished?'resume':'start');
@@ -358,31 +407,39 @@ function changeCount(id,kind,delta){
  persist();render();
 }
 
-function startOrResume(){
- const k=key(),st=stateOf();
- if(st.status==='running')return;
+async function startOrResume(){
+ const k=key(),st=stateOf(),trip=currentTrip;
+ if(st.status==='running'||!trip)return;
+ const sub=`${trip.departureTime}発　${tripDir(trip)}`;
  if(st.status==='finished'){
-  if(!confirm('この便は運行終了済みです。運行を再開しますか？\n（終了時刻を取り消し、再開時刻を記録します）'))return;
-  const {finishedAt,resultSentAt,...rest}=st;
-  states[k]={...rest,status:'running',resumedAt:now(),previousFinishedAt:finishedAt,previousResultSentAt:resultSentAt};
+  const d=await pickDriver('運行を再開します','運行を再開',sub+'\n運行終了済みの便です。終了時刻を取り消し、再開時刻を記録します。');
+  if(!d)return;
+  const {finishedAt,resultSentAt,...rest}=states[k]||st;
+  states[k]={...rest,status:'running',resumedAt:now(),previousFinishedAt:finishedAt,previousResultSentAt:resultSentAt,driverId:d.id,driverNickname:d.nickname};
   delete outbox[k]; // 修正中は送信しない（再度「運行終了」で送り直す）
  }else{
-  if(!confirm('この便の運行を開始しますか？'))return;
-  states[k]={status:'running',startedAt:now()};
+  const d=await pickDriver('運転手を選んでください','運行開始',sub);
+  if(!d)return;
+  states[k]={status:'running',startedAt:now(),driverId:d.id,driverNickname:d.nickname};
  }
  persist();render();
 }
-function finish(){
- const k=key(),st=stateOf();
- if(st.status!=='running')return;
+async function finish(){
+ const k=key(),st=stateOf(),trip=currentTrip;
+ if(st.status!=='running'||!trip)return;
  if(!confirm('この便の運行を終了しますか？\n乗降実績を事務所へ送信します。'))return;
- states[k]={...st,status:'finished',finishedAt:now()};
+ let cur=states[k]||st;
+ if(!cur.driverId&&(drivers.list||[]).length){ // 運転手を選ばずに始めた便（古い版で開始した便など）
+  const d=await pickDriver('運転手を選んでください','運行終了','この便は運転手が記録されていません。');
+  if(!d)return;
+  if(d.id)cur={...cur,driverId:d.id,driverNickname:d.nickname};
+ }
+ states[k]={...cur,status:'finished',finishedAt:now()};
  delete states[k].resultSentAt;
- outbox[k]={result:buildResult(currentTrip),queuedAt:now(),lastError:''};
+ outbox[k]={result:buildResult(trip),queuedAt:now(),lastError:''};
  persist();render();
  flushOutbox();
 }
-
 // ===== 乗降実績の送信（送信待ちを順に送る。失敗したら次の機会に再送） =====
 function renderResultSync(st){
  const el=$('resultSync'),k=key();
@@ -418,6 +475,56 @@ async function flushOutbox(){
   }finally{clearTimeout(timer)}
  }
  sending=false;persist();render();
+}
+
+// ===== 運転手の一覧と選択 =====
+function driverLabel(o){return o&&o.driverId?`${o.driverId}　${o.driverNickname||''}`.trim():''}
+let driversFetchedAt=0;
+async function fetchDrivers(){
+ const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),15000);
+ try{
+  const res=await fetch(`${sync.api}?action=getDrivers&key=${encodeURIComponent(sync.key)}`,{signal:ctrl.signal,cache:'no-store'});
+  const data=await res.json();
+  if(!data.ok)throw Error(data.error||'サーバーでエラーが発生しました');
+  drivers={list:Array.isArray(data.drivers)?data.drivers:[],at:now()};
+  try{localStorage.setItem(KEYS.drivers,JSON.stringify(drivers))}catch(e){}
+ }catch(e){console.error(e);driversFetchedAt=0} // 失敗しても、前回の一覧をそのまま使う
+ finally{clearTimeout(timer)}
+}
+function maybeFetchDrivers(force){
+ if(!configured())return;
+ if(!force&&Date.now()-driversFetchedAt<600000)return;
+ driversFetchedAt=Date.now();fetchDrivers();
+}
+// 運転手を選ぶ画面。選んだ運転手 {id,nickname} を返す（一覧が空のときは id が空）。「やめる」は null
+function pickDriver(title,okLabel,sub){
+ return new Promise(resolve=>{
+  const list=drivers.list||[],dlg=$('driverDlg'),box=$('dlgList'),ok=$('dlgOk');
+  let sel=list.some(d=>d.id===ui.driverId)?ui.driverId:''; // その端末で前回選んだ人を最初から選んでおく
+  $('dlgTitle').textContent=title;$('dlgSub').textContent=sub||'';
+  const draw=()=>{
+   if(!list.length){box.innerHTML='<div class="notice">運転手の一覧がまだありません。事務所に確認してください。このまま進むと、運転手は記録されません。</div>';ok.disabled=false;ok.textContent=`運転手を選ばずに${okLabel}`;return}
+   box.innerHTML=list.map(d=>`<button class="drv" data-id="${esc(d.id)}" aria-pressed="${d.id===sel}"><span class="did">${esc(d.id)}</span><span class="dnick">${esc(d.nickname)}</span></button>`).join('');
+   ok.disabled=!sel;ok.textContent=`この運転手で${okLabel}`;
+  };
+  const onKey=e=>{if(e.key==='Escape')close(null)};
+  const close=v=>{dlg.classList.add('hidden');document.removeEventListener('keydown',onKey);box.onclick=null;ok.onclick=null;$('dlgCancel').onclick=null;resolve(v)};
+  box.onclick=e=>{const b=e.target.closest('[data-id]');if(!b)return;sel=b.dataset.id;draw()};
+  ok.onclick=()=>{const d=list.find(x=>x.id===sel);if(d)ui.driverId=d.id;close(d?{id:d.id,nickname:d.nickname}:{id:'',nickname:''})};
+  $('dlgCancel').onclick=()=>close(null);
+  document.addEventListener('keydown',onKey);
+  draw();dlg.classList.remove('hidden');
+  (box.querySelector('[aria-pressed="true"]')||box.querySelector('.drv')||ok).focus();
+ });
+}
+// その日の車両を切り替える
+function chooseVehicle(id){
+ if(String(sync.routeId)===id)return;
+ if(isRunning()&&!confirm('運行中の便があります。車両を切り替えますか？'))return;
+ sync.routeId=id;ui.manual=false;payload=null;currentTrip=null;currentIndex=0;
+ $('tripSelect').innerHTML='';
+ try{localStorage.removeItem(KEYS.payload)}catch(e){}
+ persist();render();fetchTrips(true);
 }
 
 // ===== メニュー =====
@@ -457,12 +564,12 @@ $('file').onchange=async e=>{
 };
 
 // ===== 接続設定 =====
-function fillSettings(){$('apiUrl').value=sync.api||'';$('apiKey').value=sync.key||'';$('routeSel').value=sync.routeId||'1';$('dateSel').value=sync.date||''}
+function fillSettings(){$('apiUrl').value=sync.api||'';$('apiKey').value=sync.key||'';$('deviceType').value=sync.deviceType||'私物';$('dateSel').value=sync.date||'';$('deviceIdText').textContent=deviceId.slice(0,8)}
 $('saveSettings').onclick=()=>{
  const api=$('apiUrl').value.trim(),k=$('apiKey').value.trim();
  if(!/^https:\/\/script\.google\.com\/.+\/exec$/.test(api)){alert('連携用URLは「https://script.google.com/」で始まり「/exec」で終わるURLを入力してください。');return}
  if(!k){alert('合言葉を入力してください。');return}
- sync={api,key:k,routeId:$('routeSel').value,date:$('dateSel').value};
+ sync={api,key:k,routeId:sync.routeId||'1',date:$('dateSel').value,deviceType:$('deviceType').value};
  persist();closeMenu();render();
  fetchTrips(true);flushOutbox();
 };
@@ -470,6 +577,7 @@ $('saveSettings').onclick=()=>{
 // ===== 操作 =====
 $('tripSelect').onchange=selectTrip;
 $('mainBtn').onclick=()=>{if(isRunning())finish();else startOrResume()};
+$('veh1').onclick=()=>chooseVehicle('1');$('veh2').onclick=()=>chooseVehicle('2');
 $('prevStop').onclick=()=>selectStop(currentIndex-1,false);
 $('nextStop').onclick=()=>selectStop(currentIndex+1,false);
 $('counters').onclick=e=>{const b=e.target.closest('[data-kind]');if(b&&!b.disabled)changeCount(b.dataset.id,b.dataset.kind,Number(b.dataset.delta))};
@@ -478,19 +586,21 @@ $('refreshBtn').onclick=()=>fetchTrips(true);
 
 function download(name,content,type){const blob=new Blob([content],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function resultRows(trip){const tid=String(trip.tripId),d=records[tid]||{};return trip.plannedStops.map(s=>({serviceDate:payload.serviceDate,vehicle:payload.vehicle,route:payload.routeName,direction:tripDir(trip),departureTime:trip.departureTime,tripId:tid,visitId:s.visitId,sequence:s.seq,stopName:s.stopName,expectedBoarding:expectedIn(trip,s.stopName,'boarding'),expectedAlighting:expectedIn(trip,s.stopName,'alighting'),actualBoarding:d[s.visitId]?.boarding||0,actualAlighting:d[s.visitId]?.alighting||0}))}
-function buildResult(trip){const tid=String(trip.tripId);return {schema:'tozawa-demandbus-results-v2',serviceDate:payload.serviceDate,routeId:String(payload.routeId||sync.routeId||''),vehicle:payload.vehicle,route:payload.routeName,direction:tripDir(trip),departureTime:trip.departureTime,tripId:tid,operationStatus:states[tid]||{status:'before'},createdAt:new Date().toISOString(),records:resultRows(trip)}}
+function buildResult(trip){const tid=String(trip.tripId);return {schema:'tozawa-demandbus-results-v2',serviceDate:payload.serviceDate,routeId:String(payload.routeId||sync.routeId||''),vehicle:payload.vehicle,route:payload.routeName,direction:tripDir(trip),departureTime:trip.departureTime,tripId:tid,operationStatus:states[tid]||{status:'before'},driverId:(states[tid]||{}).driverId||'',driverNickname:(states[tid]||{}).driverNickname||'',deviceId,deviceType:sync.deviceType,appVersion:APP_VERSION,createdAt:new Date().toISOString(),records:resultRows(trip)}}
 function fileBase(){return `乗降実績_${payload.serviceDate}_${payload.vehicle}_${tripDir(currentTrip)}_${String(currentTrip.departureTime).replace(':','')}`}
-$('exportCsv').onclick=()=>{const rows=[['利用日','車両','路線','方向','便','運行ID','停留所訪問ID','運行順','停留所','乗車予定人数','降車予定人数','実際の乗車人数','実際の降車人数'],...resultRows(currentTrip).map(r=>Object.values(r))];const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');download(fileBase()+'.csv',csv,'text/csv;charset=utf-8')};
+$('exportCsv').onclick=()=>{const st=stateOf();const rows=[['利用日','車両','路線','方向','便','運行ID','停留所訪問ID','運行順','停留所','乗車予定人数','降車予定人数','実際の乗車人数','実際の降車人数','運転手ID','運転手ニックネーム','端末区分'],...resultRows(currentTrip).map(r=>[...Object.values(r),st.driverId||'',st.driverNickname||'',sync.deviceType])];const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');download(fileBase()+'.csv',csv,'text/csv;charset=utf-8')};
 $('exportJson').onclick=()=>{download(fileBase()+'.json',JSON.stringify(buildResult(currentTrip),null,2),'application/json;charset=utf-8')};
 
 // ===== 起動時 =====
 fillSettings();
-if(savedPayload&&!validatePayload(savedPayload,true)){applyPayload(savedPayload)}else{render()}
+// 保存してあるデータは、今選んでいる車両のものだけ使う（ファイル読み込みのデータは除く）
+const usable=savedPayload&&!validatePayload(savedPayload,true)&&(savedPayload.source==='file'||!savedPayload.routeId||String(savedPayload.routeId)===String(sync.routeId));
+if(usable){applyPayload(savedPayload)}else{render()}
 if(!configured())needSetup();
 else if(ui.manual){setSync('warn',MANUAL_MSG);$('refreshBtn').disabled=false}
 else{$('refreshBtn').disabled=false;fetchTrips(false)}
 // 画面を開いている間は定期的に確認。タブレットの画面を戻したときも確認する
-function autoFetch(){if(document.visibilityState!=='visible'||!configured())return;flushOutbox();if(!ui.manual)fetchTrips(false)}
+function autoFetch(){if(document.visibilityState!=='visible'||!configured())return;flushOutbox();maybeFetchDrivers(false);if(!ui.manual)fetchTrips(false)}
 setInterval(autoFetch,POLL_MS);
 document.addEventListener('visibilitychange',autoFetch);
 window.addEventListener('online',()=>{flushOutbox();if(configured()&&!ui.manual)fetchTrips(false)});

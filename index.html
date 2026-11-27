@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>戸沢村デマンドバス 運転手用 v10</title>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>戸沢村デマンドバス 運転手用 v11</title>
 <style>
 :root{--navy:#17445d;--blue:#246b8e;--pale:#edf5f8;--line:#d7e1e6;--ink:#20313a;--muted:#647780;--green:#176b3b;--bluec:#185b9a;--red:#b43b36}
 *{box-sizing:border-box}
@@ -88,6 +88,12 @@ main{max-width:640px;margin:0 auto;padding:12px 12px 40px}
 .stoplist .b{color:var(--green)}.stoplist .a{color:var(--bluec)}
 .syncmini{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
 
+/* GPS */
+.gpsbar{display:flex;align-items:center;gap:8px;margin:-2px 0 10px;font-size:12px;color:var(--muted)}
+.gpsbar span{flex:1;min-width:0;line-height:1.4}
+.gpsbtn{min-height:38px;padding:6px 12px;font-size:13px;background:#e9f0f3;color:var(--navy);flex:none}
+.gpsbtn[aria-pressed="true"]{background:var(--green);color:#fff}
+.gpstoast{margin:0 0 10px;padding:9px 12px;border-radius:9px;background:#e7f5ec;color:#17643b;font-weight:800;font-size:15px;text-align:center}
 /* 車両の選択 */
 .vehicle{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .vlabel{font-size:13px;font-weight:800;color:var(--navy);white-space:nowrap}
@@ -145,6 +151,8 @@ main{max-width:640px;margin:0 auto;padding:12px 12px 40px}
 </section>
 
 <section id="stopCard" class="card hidden">
+ <div class="gpsbar"><span id="gpsStatus"></span><button id="gpsBtn" class="gpsbtn" aria-pressed="false">GPS オフ</button></div>
+ <div id="gpsToast" class="gpstoast hidden" role="status"></div>
  <div class="stopnav">
   <button id="prevStop" aria-label="前の停留所">◀</button>
   <div><div id="stopPos" class="stoppos"></div><div id="currentName" class="stopname"></div></div>
@@ -202,15 +210,15 @@ main{max-width:640px;margin:0 auto;padding:12px 12px 40px}
  </section>
  <section class="msec">
   <h3>試作版の注意</h3>
-  <p class="muted" style="margin:0">・運行開始のときに、運転手（IDとニックネーム）を選びます。車両は画面の上で選びます。<br>・「運行開始」を押した便だけ、人数を入力できます。終了後に直すときは「運行を再開」→ 修正 →「運行終了」の順に押すと、事務所の実績が置き換わります。<br>・電波がないときは乗降実績を端末に保存し、つながった時点で自動で送信します。<br>・予約人数は乗車・降車停留所ごとの参考値です。<br>・GPSによる停留所の自動判定、kintone連携は未実装です。<br>・実際の運行には使用せず、架空データで操作を確認してください。</p>
-  <p class="muted">運転手用・連携試作版 v10</p>
+  <p class="muted" style="margin:0">・運行開始のときに、運転手（IDとニックネーム）を選びます。車両は画面の上で選びます。<br>・「運行開始」を押した便だけ、人数を入力できます。終了後に直すときは「運行を再開」→ 修正 →「運行終了」の順に押すと、事務所の実績が置き換わります。<br>・電波がないときは乗降実績を端末に保存し、つながった時点で自動で送信します。<br>・予約人数は乗車・降車停留所ごとの参考値です。<br>・「GPS オン」にすると、運行中は停留所に近づいたとき（約50m以内）に、その停留所へ自動で切り替わります。違っていたら ◀ ▶ で直してください。位置は端末の中で使うだけで、記録・送信はしません。<br>・GPSを使っている間は、画面が消えないようにします。<br>・kintone連携は未実装です。<br>・実際の運行には使用せず、架空データで操作を確認してください。</p>
+  <p class="muted">運転手用・連携試作版 v11</p>
  </section>
 </nav>
 <script>
 const $=id=>document.getElementById(id);
 // 保存キーは v8 と同じ（v8 の設定・入力途中のデータをそのまま引き継ぐ）
 const KEYS={records:'tozawa_driver_records_v2',states:'tozawa_driver_states_v2',payload:'tozawa_driver_payload_v2',ui:'tozawa_driver_ui_v2',sync:'tozawa_driver_sync_v1',outbox:'tozawa_driver_outbox_v1',drivers:'tozawa_driver_drivers_v1',device:'tozawa_driver_device_v1'};
-const APP_VERSION='v10';
+const APP_VERSION='v11';
 const ROUTE_NAMES={'1':'いきいき百年の里線','2':'やまなみロード線'};
 const POLL_MS=60000;
 const MANUAL_MSG='ファイルから読み込んだデータを表示しています（自動受信は停止中）。メニュー（☰）の「最新の運行データを取得」で自動受信に戻ります。';
@@ -337,6 +345,7 @@ async function fetchTrips(userAction){
 }
 
 function selectTrip(){
+ gpsZone=null;
  currentTrip=payload?.trips?.[Number($('tripSelect').value)]||null;
  currentIndex=currentTrip?Number(ui.stopIndex[key()]||0):0;
  saveUi();render();
@@ -362,6 +371,7 @@ function renderHeader(){
 function render(){
  const ok=!!currentTrip;
  renderHeader();
+ renderGps();updateGpsWatch();
  $('exportCsv').disabled=!ok;$('exportJson').disabled=!ok;
  const showSetup=!configured()&&!payload;
  $('setupCard').classList.toggle('hidden',!showSetup);
@@ -476,6 +486,94 @@ async function flushOutbox(){
  }
  sending=false;persist();render();
 }
+
+// ===== GPS による停留所の自動選択 =====
+// 停留所の座標（停留所位置情報_入力シート.xlsx から作成。2026-11-27 時点）
+// キーは "路線ID:停留所コード"、値は [緯度, 経度, 判定半径(m)]。廃止した上蔵岡（1:7）は含まない
+const STOP_POS={"1:0":[38.737050,140.145989,50],"1:1":[38.735468,140.155557,50],"1:2":[38.732142,140.161752,50],"1:3":[38.728508,140.162059,50],"1:4":[38.725003,140.164982,50],"1:5":[38.726571,140.181322,50],"1:6":[38.726420,140.184673,50],"1:8":[38.732411,140.168442,50],"1:9":[38.731512,140.166909,50],"1:10":[38.727945,140.173407,50],"1:11":[38.733867,140.174254,50],"1:12":[38.733281,140.181749,50],"1:13":[38.738279,140.187092,50],"1:14":[38.726418,140.195683,50],"1:15":[38.744547,140.196634,50],"1:16":[38.735752,140.176145,50],"1:17":[38.744250,140.181967,50],"1:18":[38.749174,140.178765,50],"1:19":[38.755992,140.175781,50],"1:20":[38.763324,140.174890,50],"1:21":[38.766248,140.175486,50],"1:22":[38.748300,140.183804,50],"1:23":[38.753514,140.193147,50],"1:24":[38.757112,140.191580,50],"1:25":[38.764693,140.192168,50],"1:26":[38.769524,140.195115,50],"1:27":[38.773086,140.193481,50],"1:28":[38.776600,140.183418,50],"1:29":[38.779845,140.183883,50],"1:30":[38.783256,140.184335,50],"2:0":[38.737050,140.145989,50],"2:1":[38.738554,140.143140,50],"2:2":[38.742140,140.126503,50],"2:3":[38.743829,140.123679,50],"2:4":[38.739390,140.131680,50],"2:5":[38.737685,140.135496,50],"2:6":[38.728094,140.121013,50],"2:7":[38.723230,140.120977,50],"2:8":[38.721069,140.125579,50],"2:9":[38.717960,140.127917,50],"2:10":[38.714697,140.133679,50],"2:11":[38.707611,140.137336,50],"2:12":[38.705815,140.141319,50],"2:13":[38.702843,140.145422,50],"2:14":[38.696181,140.150857,50],"2:15":[38.693976,140.152812,50],"2:16":[38.689829,140.158203,50],"2:17":[38.688113,140.159673,50],"2:18":[38.681670,140.165259,50],"2:19":[38.678578,140.165354,50],"2:20":[38.676683,140.163765,50],"2:21":[38.662700,140.168951,50],"2:22":[38.655916,140.169512,50]};
+const GPS_MAX_ACCURACY=60; // 精度がこれより悪い（m）位置では、停留所を切り替えない
+let gpsWatch=null,gpsLast=null,gpsZone=null,gpsErr='',wakeLock=null,wakeBusy=false,toastTimer=null;
+function stopPos(s){const p=STOP_POS[`${payload?.routeId||sync.routeId}:${s?.stopCode}`];return p?{lat:p[0],lon:p[1],r:p[2]}:null}
+function distM(a,b){const R=6371000,rad=Math.PI/180,dp=(b.lat-a.lat)*rad,dl=(b.lon-a.lon)*rad;const h=Math.sin(dp/2)**2+Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+function fmtDist(d){return d<1000?`${Math.round(d)}m`:`${(d/1000).toFixed(1)}km`}
+function gpsWanted(){return !!ui.gps&&!!currentTrip&&isRunning()&&document.visibilityState==='visible'}
+// 運行中でGPSオンのときだけ位置を見張る（電池の消耗を抑えるため、それ以外は止める）
+function updateGpsWatch(){
+ const want=gpsWanted();
+ if(want&&gpsWatch===null){
+  if(!('geolocation' in navigator)){gpsErr='この端末・ブラウザでは位置情報を使えません。';ui.gps=false;persist();renderGps();return}
+  gpsWatch=navigator.geolocation.watchPosition(onGps,onGpsError,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+ }else if(!want&&gpsWatch!==null){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;gpsZone=null}
+ updateWakeLock(want);
+}
+// GPSを使っている間は画面を消さない（画面が消えると位置が取れなくなるため）
+async function updateWakeLock(want){
+ if(wakeBusy||!('wakeLock' in navigator))return;
+ wakeBusy=true;
+ try{
+  if(want&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}
+  else if(!want&&wakeLock){const w=wakeLock;wakeLock=null;await w.release()}
+ }catch(e){console.error(e)}
+ finally{wakeBusy=false}
+}
+function onGpsError(e){
+ if(e&&e.code===1){
+  ui.gps=false;persist();
+  if(gpsWatch!==null){navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null}
+  gpsErr='位置情報の使用が許可されていません。ブラウザの設定で、このページの位置情報を「許可」にしてから、もう一度「GPS オン」を押してください。';
+ }else gpsErr=e&&e.code===3?'位置を取得できません（時間切れ）。空の見える場所で待ってください。':'位置を取得できません。端末の位置情報（GPS）がオンになっているか確認してください。';
+ renderGps();
+}
+function onGps(pos){
+ const c=pos.coords;gpsErr='';
+ gpsLast={lat:c.latitude,lon:c.longitude,acc:Math.round(c.accuracy),nearest:null};
+ const stops=currentTrip?.plannedStops||[];
+ const near=[];
+ stops.forEach((s,i)=>{const p=stopPos(s);if(p)near.push({i,name:s.stopName,d:distM(gpsLast,p),p})});
+ near.sort((a,b)=>a.d-b.d);
+ gpsLast.nearest=near[0]||null;
+ if(isRunning()&&gpsLast.acc<=GPS_MAX_ACCURACY)autoSelect(stops,near);
+ renderGps();
+}
+// 停留所の判定半径に入ったときに1回だけ切り替える。
+// 同じ停留所にいる間は切り替え直さないので、運転手が ◀ ▶ で直した選択はそのまま残る
+function autoSelect(stops,near){
+ if(gpsZone&&distM(gpsLast,gpsZone.p)>gpsZone.p.r*2)gpsZone=null; // 半径の2倍まで離れたら「停留所を出た」とみなす
+ const hit=near.find(x=>x.d<=x.p.r);
+ if(!hit||(gpsZone&&gpsZone.name===hit.name))return;
+ gpsZone={name:hit.name,p:hit.p};
+ // 同じ停留所に2回寄る便では、今の停留所より先にある方を選ぶ（後ろには戻らない）
+ const same=stops.map((s,i)=>s.stopName===hit.name?i:-1).filter(i=>i>=0);
+ const target=stops[currentIndex]?.stopName===hit.name?same.find(i=>i>currentIndex):same.find(i=>i>=currentIndex);
+ if(target===undefined||target===currentIndex)return;
+ selectStop(target,true);
+ showToast(`📍 ${hit.name} に着きました（GPS）`);
+ try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}
+}
+function showToast(text){const el=$('gpsToast');el.textContent=text;el.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.add('hidden'),8000)}
+function renderGps(){
+ const btn=$('gpsBtn'),st=$('gpsStatus');
+ const has=(currentTrip?.plannedStops||[]).some(s=>stopPos(s));
+ btn.setAttribute('aria-pressed',String(!!ui.gps));btn.textContent=ui.gps?'GPS オン':'GPS オフ';
+ btn.disabled=!has&&!ui.gps;
+ let text;
+ if(!has)text='この便の停留所には位置情報がありません。';
+ else if(gpsErr)text=gpsErr;
+ else if(!ui.gps)text='GPSで停留所を自動で選べます。';
+ else if(!isRunning())text='運行中だけ、停留所を自動で選びます。';
+ else if(!gpsLast)text='位置を確認しています…';
+ else{
+  const n=gpsLast.nearest;
+  text=`精度 ±${gpsLast.acc}m`+(gpsLast.acc>GPS_MAX_ACCURACY?'（低いため自動選択を休止中）':'')+(n?`／最寄り：${n.name} ${fmtDist(n.d)}`:'');
+ }
+ st.textContent=text;
+}
+$('gpsBtn').onclick=()=>{
+ ui.gps=!ui.gps;gpsErr='';gpsZone=null;gpsLast=null;persist();
+ // オンにしたときは、運転を始める前に位置情報の許可を求めておく
+ if(ui.gps&&'geolocation' in navigator)navigator.geolocation.getCurrentPosition(onGps,onGpsError,{enableHighAccuracy:true,timeout:20000,maximumAge:10000});
+ updateGpsWatch();renderGps();
+};
 
 // ===== 運転手の一覧と選択 =====
 function driverLabel(o){return o&&o.driverId?`${o.driverId}　${o.driverNickname||''}`.trim():''}
@@ -603,6 +701,7 @@ else{$('refreshBtn').disabled=false;fetchTrips(false)}
 function autoFetch(){if(document.visibilityState!=='visible'||!configured())return;flushOutbox();maybeFetchDrivers(false);if(!ui.manual)fetchTrips(false)}
 setInterval(autoFetch,POLL_MS);
 document.addEventListener('visibilitychange',autoFetch);
+document.addEventListener('visibilitychange',()=>updateGpsWatch()); // 画面を戻したらGPSと画面の点灯を再開
 window.addEventListener('online',()=>{flushOutbox();if(configured()&&!ui.manual)fetchTrips(false)});
 flushOutbox(); // 起動時に送信待ちがあれば送る
 // 「更新されました」の表示はタップで消す

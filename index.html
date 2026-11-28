@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>戸沢村デマンドバス 運転手用 v12</title><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="デマンドバス">
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>戸沢村デマンドバス 運転手用 v13</title><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="デマンドバス">
 <style>
 :root{--navy:#17445d;--blue:#246b8e;--pale:#edf5f8;--line:#d7e1e6;--ink:#20313a;--muted:#647780;--green:#176b3b;--bluec:#185b9a;--red:#b43b36}
 *{box-sizing:border-box}
@@ -98,6 +98,39 @@ main{max-width:640px;margin:0 auto;padding:12px 12px 40px}
 .gpstoast small{display:block;font-size:15px;font-weight:800;margin-top:3px}
 .gpstoast.approach{background:#fff3df;color:#8a4b0b;border:2px solid #f0cf97}
 .gpstoast.arrive{background:#e7f5ec;color:#17643b;border:2px solid #83c69b}
+/* 案内の帯とGPSの状態（決まった場所に出して、画面がずれないようにする） */
+.infopanel{display:flex;align-items:stretch;gap:8px;margin-bottom:10px;min-height:44px}
+.infotext{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;font-size:12px;color:var(--muted);line-height:1.4}
+.infotext .gpstoast{margin:0}
+.infotext .gpstoast:not(.hidden)+#gpsStatus{display:none}
+.infopanel .gpsbtns{display:flex;flex-direction:column;gap:6px;flex:none;width:auto}
+.opleft{flex:1;min-width:0}
+.triplabel{font-size:18px;font-weight:900;color:var(--navy);line-height:1.3}
+.updver{font-size:14px;font-weight:700}
+/* 運行中：1画面に収めてスクロールさせない */
+body.running{overflow:hidden;overscroll-behavior:none}
+body.running main{height:calc(100vh - 68px);height:calc(100dvh - 68px);display:flex;flex-direction:column;padding:8px 10px 10px;overflow-y:auto;overscroll-behavior:none}
+body.running #vehicleCard,body.running #listCard,body.running #safety,body.running #syncMini,body.running #tripSelect{display:none!important}
+body.running .banner{margin-bottom:8px;padding:8px 12px;font-size:14px}
+body.running #tripCard{padding:10px 12px;margin-bottom:8px;flex:none}
+body.running .oprow{margin-top:0}
+body.running .mainbtn{min-height:54px;min-width:118px}
+body.running #stopCard{flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:0;padding:10px}
+body.running .infopanel{height:88px;flex:none;margin-bottom:8px}
+body.running .infopanel .gpsbtn{min-height:40px;padding:4px 8px;font-size:12px}
+body.running .gpstoast{height:100%;display:flex;flex-direction:column;justify-content:center;padding:5px 8px;font-size:15px;line-height:1.3}
+body.running .gpstoast small{font-size:13px;margin-top:1px}
+body.running .stopnav{grid-template-columns:54px 1fr 54px;flex:none}
+body.running .stopnav button{min-height:54px}
+body.running .stopname{font-size:24px}
+body.running .counts{flex:1;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;min-height:0}
+body.running .counter{display:flex;flex-direction:column;align-items:stretch;padding:10px 8px;text-align:center;min-height:0}
+body.running .counter-title{font-size:18px}
+body.running .counter-hint{font-size:13px;margin-top:0}
+body.running .counter b{font-size:42px;margin:0 0 6px}
+body.running .counterbuttons{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0}
+body.running .counterbuttons .plus{flex:3 1 0;min-height:60px;font-size:38px}
+body.running .counterbuttons .minus{flex:2 1 0;min-height:46px;font-size:30px}
 /* 車両の選択 */
 .vehicle{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .vlabel{font-size:13px;font-weight:800;color:var(--navy);white-space:nowrap}
@@ -150,13 +183,12 @@ main{max-width:640px;margin:0 auto;padding:12px 12px 40px}
 
 <section id="tripCard" class="card hidden">
  <select id="tripSelect" class="tripsel" aria-label="便（出発時刻）"></select>
- <div class="oprow"><div id="operationStatus" class="opstatus">運行開始前</div><button id="mainBtn" class="mainbtn start">運行開始</button></div>
+ <div class="oprow"><div class="opleft"><div id="tripLabel" class="triplabel hidden"></div><div id="operationStatus" class="opstatus">運行開始前</div></div><button id="mainBtn" class="mainbtn start">運行開始</button></div>
  <div id="resultSync" class="resultsync hidden"></div>
 </section>
 
 <section id="stopCard" class="card hidden">
- <div class="gpsbar"><div class="gpsbtns"><button id="voiceBtn" class="gpsbtn" aria-pressed="true">🔊 音声オン</button><button id="gpsBtn" class="gpsbtn" aria-pressed="false">GPS オフ</button></div><span id="gpsStatus"></span></div>
- <div id="gpsToast" class="gpstoast hidden" role="status"></div>
+ <div class="infopanel"><div class="infotext"><div id="gpsToast" class="gpstoast hidden" role="status"></div><span id="gpsStatus"></span></div><div class="gpsbtns"><button id="voiceBtn" class="gpsbtn" aria-pressed="true">🔊 音声オン</button><button id="gpsBtn" class="gpsbtn" aria-pressed="false">GPS オフ</button></div></div>
  <div class="stopnav">
   <button id="prevStop" aria-label="前の停留所">◀</button>
   <div><div id="stopPos" class="stoppos"></div><div id="currentName" class="stopname"></div></div>
@@ -186,6 +218,12 @@ main{max-width:640px;margin:0 auto;padding:12px 12px 40px}
 <nav id="drawer" class="drawer" aria-label="メニュー" aria-hidden="true">
  <div class="drawerhead"><span>メニュー</span><button class="iconbtn" id="closeMenu" aria-label="メニューを閉じる">✕</button></div>
  <section class="msec">
+  <h3>画面の更新</h3>
+  <div class="updver">今の版：<span id="curVersion"></span></div>
+  <div class="mactions"><button id="updateBtn">最新版に更新</button></div>
+  <p id="updateMsg" class="muted">GitHub に新しい画面を上げた後に押します。接続設定、入力した人数、送信待ちの実績は消えません。</p>
+ </section>
+ <section class="msec">
   <h3>運行データ</h3>
   <div id="menuSync" class="menusync">—</div>
   <div id="loadStatus" class="muted">運行データはまだ届いていません。</div>
@@ -214,15 +252,15 @@ main{max-width:640px;margin:0 auto;padding:12px 12px 40px}
  </section>
  <section class="msec">
   <h3>試作版の注意</h3>
-  <p class="muted" style="margin:0">・運行開始のときに、運転手（IDとニックネーム）を選びます。車両は画面の上で選びます。<br>・「運行開始」を押した便だけ、人数を入力できます。終了後に直すときは「運行を再開」→ 修正 →「運行終了」の順に押すと、事務所の実績が置き換わります。<br>・電波がないときは乗降実績を端末に保存し、つながった時点で自動で送信します。<br>・予約人数は乗車・降車停留所ごとの参考値です。<br>・「GPS オン」にすると、運行中は次の乗降予定の停留所の約200m手前で「まもなく、○○停留所に到着します」と画面と音声で案内し、その停留所に切り替わります。約50m以内に入ると「○○停留所に到着しました」と案内します。違っていたら ◀ ▶ で直してください。位置は端末の中で使うだけで、記録・送信はしません。<br>・「音声オン／オフ」で音声案内を切り替えられます。iPhone は消音モード（横のスイッチ）や音量を確認してください。<br>・GPSを使っている間は、画面が消えないようにします。<br>・kintone連携は未実装です。<br>・実際の運行には使用せず、架空データで操作を確認してください。</p>
-  <p class="muted">運転手用・連携試作版 v12</p>
+  <p class="muted" style="margin:0">・運行開始のときに、運転手（IDとニックネーム）を選びます。車両は画面の上で選びます。<br>・運行中は、今日の車両と便の選択を隠し、スクロールしなくても操作できる画面になります。運行終了を押すと元に戻ります。<br>・「運行開始」を押した便だけ、人数を入力できます。終了後に直すときは「運行を再開」→ 修正 →「運行終了」の順に押すと、事務所の実績が置き換わります。<br>・電波がないときは乗降実績を端末に保存し、つながった時点で自動で送信します。<br>・予約人数は乗車・降車停留所ごとの参考値です。<br>・「GPS オン」にすると、運行中は次の乗降予定の停留所の約200m手前で「まもなく、○○停留所に到着します」と画面と音声で案内し、その停留所に切り替わります。約50m以内に入ると「○○停留所に到着しました」と案内します。違っていたら ◀ ▶ で直してください。位置は端末の中で使うだけで、記録・送信はしません。<br>・「音声オン／オフ」で音声案内を切り替えられます。iPhone は消音モード（横のスイッチ）や音量を確認してください。<br>・GPSを使っている間は、画面が消えないようにします。<br>・kintone連携は未実装です。<br>・実際の運行には使用せず、架空データで操作を確認してください。</p>
+  <p class="muted">運転手用・連携試作版 v13</p>
  </section>
 </nav>
 <script>
 const $=id=>document.getElementById(id);
 // 保存キーは v8 と同じ（v8 の設定・入力途中のデータをそのまま引き継ぐ）
 const KEYS={records:'tozawa_driver_records_v2',states:'tozawa_driver_states_v2',payload:'tozawa_driver_payload_v2',ui:'tozawa_driver_ui_v2',sync:'tozawa_driver_sync_v1',outbox:'tozawa_driver_outbox_v1',drivers:'tozawa_driver_drivers_v1',device:'tozawa_driver_device_v1'};
-const APP_VERSION='v12';
+const APP_VERSION='v13';
 const ROUTE_NAMES={'1':'いきいき百年の里線','2':'やまなみロード線'};
 const POLL_MS=60000;
 const MANUAL_MSG='ファイルから読み込んだデータを表示しています（自動受信は停止中）。メニュー（☰）の「最新の運行データを取得」で自動受信に戻ります。';
@@ -358,22 +396,28 @@ function selectTrip(){
 function selectStop(i,scroll){
  const n=currentTrip?.plannedStops?.length||0;if(!n)return;
  currentIndex=Math.min(Math.max(0,i),n-1);saveUi();render();
- if(scroll)$('stopCard').scrollIntoView({behavior:'smooth',block:'start'});
+ if(scroll&&!document.body.classList.contains('running'))$('stopCard').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 // ===== 画面表示 =====
 function renderVehicle(){
- $('vehicleCard').classList.toggle('hidden',!configured());
+ $('vehicleCard').classList.toggle('hidden',!configured()||(!!currentTrip&&isRunning()));
  ['1','2'].forEach(id=>$('veh'+id).setAttribute('aria-pressed',String(String(sync.routeId)===id)));
 }
 function renderHeader(){
  renderVehicle();
  const vehicle=payload?.vehicle||`${sync.routeId||'1'}号車`,route=payload?.routeName||ROUTE_NAMES[sync.routeId]||'';
  $('headTitle').textContent=`${vehicle}・${route}`;
- $('headSub').textContent=`${payload?.serviceDate||targetDate()} の運行${sync.date?'（練習用の日付）':''}`;
+ $('headSub').textContent=currentTrip&&isRunning()?'運行中：操作は安全な場所に停車してから':`${payload?.serviceDate||targetDate()} の運行${sync.date?'（練習用の日付）':''}`;
 }
 function render(){
  const ok=!!currentTrip;
+ // 運行中は、車両・便の選択と停留所一覧を隠して1画面に収める（運行開始・終了で切り替わる）
+ const runMode=ok&&isRunning(),wasRun=document.body.classList.contains('running');
+ document.body.classList.toggle('running',runMode);
+ if(runMode&&!wasRun){window.scrollTo(0,0);if($('drawer').classList.contains('open'))closeMenu()}
+ $('tripLabel').classList.toggle('hidden',!runMode);
+ if(runMode)$('tripLabel').textContent=`${currentTrip.departureTime}発　${tripDir(currentTrip)}`;
  renderHeader();
  renderGps();updateGpsWatch();
  $('exportCsv').disabled=!ok;$('exportJson').disabled=!ok;
@@ -404,7 +448,7 @@ function render(){
  if(!stops.length){$('stopPos').textContent='';$('currentName').textContent='対象停留所なし';$('counters').innerHTML='';$('prevStop').disabled=true;$('nextStop').disabled=true;$('stopList').innerHTML='';return}
  currentIndex=Math.min(Math.max(0,currentIndex),stops.length-1);
  const s=stops[currentIndex],r=d[s.visitId]||{boarding:0,alighting:0},id=esc(s.visitId),dis=running?'':' disabled';
- const label=sameNameCount(s.stopName)>1?'予約（同名停留所の合計）':'予約';
+ const label=sameNameCount(s.stopName)>1?'予約（2回分の合計）':'予約';
  $('stopPos').textContent=`停留所 ${currentIndex+1} / ${stops.length}`;
  $('currentName').textContent=s.stopName;
  $('prevStop').disabled=currentIndex===0;$('nextStop').disabled=currentIndex===stops.length-1;
@@ -623,6 +667,27 @@ $('gpsBtn').onclick=()=>{
  updateGpsWatch();renderGps();
 };
 
+// ===== 最新版に更新 =====
+// 設定や入力した人数は端末に保存してあるので、読み込み直しても消えない
+function goTo(url){location.replace(url)}
+$('updateBtn').onclick=async()=>{
+ if(isRunning()&&!confirm('運行中です。画面を読み込み直しますか？\n入力した人数や運行の状態は消えません。'))return;
+ const btn=$('updateBtn'),msg=$('updateMsg'),base=location.href.split('#')[0].split('?')[0];
+ btn.disabled=true;btn.textContent='確認しています…';
+ try{
+  const res=await fetch(base+'?check='+Date.now(),{cache:'no-store'});
+  if(!res.ok)throw Error('HTTP '+res.status);
+  const m=(await res.text()).match(/const APP_VERSION='([^']+)'/),latest=m?m[1]:'';
+  try{await fetch(base,{cache:'reload'})}catch(e){} // スマホが覚えている古い画面を新しくしておく
+  persist();
+  msg.textContent=latest&&latest!==APP_VERSION?`最新版（${latest}）を読み込みます…`:`最新版（${APP_VERSION}）です。読み込み直します…`;
+  setTimeout(()=>goTo(base+'?v='+Date.now()),700);
+ }catch(e){
+  console.error(e);msg.textContent='確認できませんでした。電波のよい場所で、もう一度押してください。';
+  btn.disabled=false;btn.textContent='最新版に更新';
+ }
+};
+
 // ===== 運転手の一覧と選択 =====
 function driverLabel(o){return o&&o.driverId?`${o.driverId}　${o.driverNickname||''}`.trim():''}
 let driversFetchedAt=0;
@@ -738,6 +803,7 @@ $('exportCsv').onclick=()=>{const st=stateOf();const rows=[['利用日','車両'
 $('exportJson').onclick=()=>{download(fileBase()+'.json',JSON.stringify(buildResult(currentTrip),null,2),'application/json;charset=utf-8')};
 
 // ===== 起動時 =====
+$('curVersion').textContent=APP_VERSION;
 fillSettings();
 // 保存してあるデータは、今選んでいる車両のものだけ使う（ファイル読み込みのデータは除く）
 const usable=savedPayload&&!validatePayload(savedPayload,true)&&(savedPayload.source==='file'||!savedPayload.routeId||String(savedPayload.routeId)===String(sync.routeId));

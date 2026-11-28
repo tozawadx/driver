@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>戸沢村デマンドバス 運転手用 v15</title><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="デマンドバス">
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>戸沢村デマンドバス 運転手用 v16</title><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="デマンドバス">
 <style>
 :root{--navy:#17445d;--blue:#246b8e;--pale:#edf5f8;--line:#d7e1e6;--ink:#20313a;--muted:#647780;--green:#176b3b;--bluec:#185b9a;--red:#b43b36}
 *{box-sizing:border-box}
@@ -259,6 +259,17 @@ body.running .counterbuttons .minus{flex:2 1 0;min-height:46px;font-size:30px}
   <div class="field"><label for="file">運行データ（JSONファイル）を読み込む</label><input id="file" type="file" accept=".json,application/json"></div>
   <p class="muted">予約管理画面の「連携データをファイル出力（JSON・予備）」で作ったファイルを選びます。読み込むと自動受信は止まります。「最新の運行データを取得」を押すと自動受信に戻ります。</p>
  </section>
+ <section class="msec" id="voiceSec">
+  <h3>音声の設定</h3>
+  <div class="field"><label for="voiceSel">声</label><select id="voiceSel"><option value="">自動（端末の日本語の声）</option></select></div>
+  <div class="field"><label for="rateSel">読み上げの速さ</label><select id="rateSel"><option value="0.8">ゆっくり（0.8）</option><option value="0.9">少しゆっくり（0.9）</option><option value="1">ふつう（1.0）</option><option value="1.1">少し速い（1.1）</option><option value="1.2">速い（1.2）</option></select></div>
+  <div class="mactions"><button id="voiceTest" class="secondary">▶ この声と速さで試聴する</button></div>
+  <p class="muted">選んだ声と速さは、運行中の案内にも使います。声の一覧は端末によって違います。iPhone は「設定 → アクセシビリティ → 読み上げコンテンツ → 声 → 日本語」で「拡張」や「プレミアム」の声をダウンロードすると、ここに出てきます（ダウンロード後に画面を開き直してください）。「通信が必要」の声は、電波のない場所では使えないことがあります。</p>
+  <h3 style="margin-top:16px">試し読み</h3>
+  <div class="field"><label for="trialText">読ませたい文字</label><input id="trialText" type="text" placeholder="例：ふるくち えきまえ"></div>
+  <div class="mactions"><button id="trialPlain" class="secondary">▶ そのまま読む</button><button id="trialStop" class="secondary">▶「○○停留所に到着しました。」の形で読む</button></div>
+  <p class="muted">空白・読点（、）・カタカナ・漢字まじりなど、書き方を変えて聞き比べてください。良かった書き方を、停留所位置情報_入力シートの「読み上げ用の読み」に入力します。この欄の文字は保存されません。</p>
+ </section>
  <section class="msec" id="readSec">
   <h3>停留所の読み上げ確認</h3>
   <p class="muted" style="margin-top:0">▶ を押すと、運行中と同じ声で「○○停留所に到着しました」と読み上げます。読み間違えた停留所は、停留所位置情報_入力シートの「読み上げ用の読み」に正しい読みを入力してください。緑の「読み：」が出ている停留所は、読みを設定済みです。</p>
@@ -269,14 +280,14 @@ body.running .counterbuttons .minus{flex:2 1 0;min-height:46px;font-size:30px}
  <section class="msec">
   <h3>試作版の注意</h3>
   <p class="muted" style="margin:0">・運行開始のときに、運転手（IDとニックネーム）を選びます。車両は画面の上で選びます。<br>・運行中は、今日の車両と便の選択を隠し、スクロールしなくても操作できる画面になります。運行終了を押すと元に戻ります。<br>・「運行開始」を押した便だけ、人数を入力できます。終了後に直すときは「運行を再開」→ 修正 →「運行終了」の順に押すと、事務所の実績が置き換わります。<br>・電波がないときは乗降実績を端末に保存し、つながった時点で自動で送信します。<br>・予約人数は乗車・降車停留所ごとの参考値です。<br>・「GPS オン」にすると、運行中は次の乗降予定の停留所の約200m手前で「まもなく、○○停留所に到着します」と画面と音声で案内し、その停留所に切り替わります。約50m以内に入ると「○○停留所に到着しました」と案内します。違っていたら ◀ ▶ で直してください。位置は端末の中で使うだけで、記録・送信はしません。<br>・「音声オン／オフ」で音声案内を切り替えられます。iPhone は消音モード（横のスイッチ）や音量を確認してください。<br>・GPSを使っている間は、画面が消えないようにします。<br>・kintone連携は未実装です。<br>・実際の運行には使用せず、架空データで操作を確認してください。</p>
-  <p class="muted">運転手用・連携試作版 v15</p>
+  <p class="muted">運転手用・連携試作版 v16</p>
  </section>
 </nav>
 <script>
 const $=id=>document.getElementById(id);
 // 保存キーは v8 と同じ（v8 の設定・入力途中のデータをそのまま引き継ぐ）
 const KEYS={records:'tozawa_driver_records_v2',states:'tozawa_driver_states_v2',payload:'tozawa_driver_payload_v2',ui:'tozawa_driver_ui_v2',sync:'tozawa_driver_sync_v1',outbox:'tozawa_driver_outbox_v1',drivers:'tozawa_driver_drivers_v1',device:'tozawa_driver_device_v1'};
-const APP_VERSION='v15';
+const APP_VERSION='v16';
 const ROUTE_NAMES={'1':'いきいき百年の里線','2':'やまなみロード線'};
 const POLL_MS=60000;
 const MANUAL_MSG='ファイルから読み込んだデータを表示しています（自動受信は停止中）。メニュー（☰）の「最新の運行データを取得」で自動受信に戻ります。';
@@ -648,11 +659,13 @@ function showToast(kind,main,sub){
 // ===== 音声案内 =====
 let jaVoice=null,speechUnlocked=false;
 function canSpeak(){return 'speechSynthesis' in window&&typeof SpeechSynthesisUtterance!=='undefined'}
-function pickVoice(){try{const vs=speechSynthesis.getVoices();jaVoice=vs.find(v=>/^ja/i.test(v.lang)&&v.localService)||vs.find(v=>/^ja/i.test(v.lang))||null}catch(e){}}
+function jaVoices(){try{return speechSynthesis.getVoices().filter(v=>/^ja/i.test(v.lang))}catch(e){return []}}
+function pickVoice(){const vs=jaVoices();jaVoice=(ui.voiceURI&&vs.find(v=>v.voiceURI===ui.voiceURI))||vs.find(v=>v.localService)||vs[0]||null;renderVoiceSel()}
+function voiceRate(){const r=Number(ui.voiceRate);return r>=0.5&&r<=2?r:1}
 if(canSpeak()){pickVoice();try{speechSynthesis.addEventListener('voiceschanged',pickVoice)}catch(e){}}
 function speak(text){
  if(ui.voice===false||!canSpeak())return;
- try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';if(jaVoice)u.voice=jaVoice;u.rate=1;u.volume=1;speechSynthesis.speak(u)}catch(e){console.error(e)}
+ try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';if(jaVoice)u.voice=jaVoice;u.rate=voiceRate();u.volume=1;speechSynthesis.speak(u)}catch(e){console.error(e)}
 }
 // iPhone では、一度画面をタップして声を出しておかないと、後から自動で話せない。最初のタップで無音の発声をしておく
 function unlockSpeech(){
@@ -710,6 +723,22 @@ $('updateBtn').onclick=async()=>{
  }
 };
 
+// ===== 音声の設定と試し読み（メニュー） =====
+function renderVoiceSel(){
+ const sel=$('voiceSel');if(!sel)return;
+ const vs=jaVoices();
+ sel.innerHTML='<option value="">自動（端末の日本語の声）</option>'+vs.map(v=>`<option value="${esc(v.voiceURI)}">${esc(v.name)}${v.localService?'':'（通信が必要）'}</option>`).join('');
+ sel.value=ui.voiceURI&&vs.some(v=>v.voiceURI===ui.voiceURI)?ui.voiceURI:'';
+ sel.disabled=!canSpeak();$('rateSel').value=String(voiceRate());
+}
+function sampleText(){const k=STOP_NAMES['1:2']?'1:2':Object.keys(STOP_NAMES)[0];return k?`まもなく、${sayName(k,STOP_NAMES[k])}に到着します。降車予定は2名です。`:'まもなく、停留所に到着します。'}
+$('voiceSel').onchange=()=>{ui.voiceURI=$('voiceSel').value;persist();pickVoice();sayNow(sampleText())};
+$('rateSel').onchange=()=>{ui.voiceRate=Number($('rateSel').value);persist();sayNow(sampleText())};
+$('voiceTest').onclick=()=>sayNow(sampleText());
+function trialText(){const v=$('trialText').value.trim();if(!v)$('trialText').focus();return v}
+$('trialPlain').onclick=()=>{const v=trialText();if(v)sayNow(v)};
+$('trialStop').onclick=()=>{const v=trialText();if(v)sayNow(`${v}停留所に到着しました。`)};
+
 // ===== 停留所の読み上げ確認（メニュー） =====
 let readRoute=String(sync.routeId||'1'),readPlaying=false;
 function stopKeysOf(rid){return Object.keys(STOP_NAMES).filter(k=>k.split(':')[0]===rid).sort((a,b)=>Number(a.split(':')[1])-Number(b.split(':')[1]))}
@@ -717,7 +746,7 @@ function phraseFor(k){return `${sayName(k,STOP_NAMES[k])}に到着しました�
 // 確認用の読み上げ（音声オフの設定でも、ボタンを押したときは読み上げる）
 function sayNow(text,onend){
  if(!canSpeak()){alert('この端末・ブラウザでは音声を使えません。');return}
- try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';if(jaVoice)u.voice=jaVoice;u.rate=1;u.volume=1;if(onend){u.onend=onend;u.onerror=onend}speechSynthesis.speak(u)}catch(e){console.error(e)}
+ try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';if(jaVoice)u.voice=jaVoice;u.rate=voiceRate();u.volume=1;if(onend){u.onend=onend;u.onerror=onend}speechSynthesis.speak(u)}catch(e){console.error(e)}
 }
 function renderReadList(){
  ['1','2'].forEach(id=>$('rd'+id).setAttribute('aria-pressed',String(readRoute===id)));
@@ -854,7 +883,7 @@ $('exportCsv').onclick=()=>{const st=stateOf();const rows=[['利用日','車両'
 $('exportJson').onclick=()=>{download(fileBase()+'.json',JSON.stringify(buildResult(currentTrip),null,2),'application/json;charset=utf-8')};
 
 // ===== 起動時 =====
-$('curVersion').textContent=APP_VERSION;renderReadList();
+$('curVersion').textContent=APP_VERSION;renderReadList();renderVoiceSel();
 fillSettings();
 // 保存してあるデータは、今選んでいる車両のものだけ使う（ファイル読み込みのデータは除く）
 const usable=savedPayload&&!validatePayload(savedPayload,true)&&(savedPayload.source==='file'||!savedPayload.routeId||String(savedPayload.routeId)===String(sync.routeId));

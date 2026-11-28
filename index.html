@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>戸沢村デマンドバス 運転手用 v13</title><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="デマンドバス">
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>戸沢村デマンドバス 運転手用 v15</title><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" type="image/png" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="デマンドバス">
 <style>
 :root{--navy:#17445d;--blue:#246b8e;--pale:#edf5f8;--line:#d7e1e6;--ink:#20313a;--muted:#647780;--green:#176b3b;--bluec:#185b9a;--red:#b43b36}
 *{box-sizing:border-box}
@@ -131,6 +131,15 @@ body.running .counter b{font-size:42px;margin:0 0 6px}
 body.running .counterbuttons{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0}
 body.running .counterbuttons .plus{flex:3 1 0;min-height:60px;font-size:38px}
 body.running .counterbuttons .minus{flex:2 1 0;min-height:46px;font-size:30px}
+/* 停留所の読み上げ確認（メニュー） */
+#readSec .seg{margin-top:8px}
+.readlist{list-style:none;margin:10px 0 0;padding:0}
+.readlist li{display:flex;align-items:center;gap:10px;padding:6px 4px;border-bottom:1px solid var(--line);border-radius:6px}
+.readlist li.now{background:#e3f0fb}
+.readlist .no{width:26px;text-align:center;font-size:12px;font-weight:800;color:var(--muted);flex:none}
+.readlist .nm{flex:1;min-width:0;font-size:16px;font-weight:700}
+.readlist .nm small{display:block;font-size:12px;color:var(--green);font-weight:700}
+.readlist button{min-height:44px;min-width:56px;font-size:18px;flex:none}
 /* 車両の選択 */
 .vehicle{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .vlabel{font-size:13px;font-weight:800;color:var(--navy);white-space:nowrap}
@@ -250,17 +259,24 @@ body.running .counterbuttons .minus{flex:2 1 0;min-height:46px;font-size:30px}
   <div class="field"><label for="file">運行データ（JSONファイル）を読み込む</label><input id="file" type="file" accept=".json,application/json"></div>
   <p class="muted">予約管理画面の「連携データをファイル出力（JSON・予備）」で作ったファイルを選びます。読み込むと自動受信は止まります。「最新の運行データを取得」を押すと自動受信に戻ります。</p>
  </section>
+ <section class="msec" id="readSec">
+  <h3>停留所の読み上げ確認</h3>
+  <p class="muted" style="margin-top:0">▶ を押すと、運行中と同じ声で「○○停留所に到着しました」と読み上げます。読み間違えた停留所は、停留所位置情報_入力シートの「読み上げ用の読み」に正しい読みを入力してください。緑の「読み：」が出ている停留所は、読みを設定済みです。</p>
+  <div class="seg" role="group" aria-label="路線"><button id="rd1" aria-pressed="true">1号車<small>いきいき百年の里線</small></button><button id="rd2" aria-pressed="false">2号車<small>やまなみロード線</small></button></div>
+  <div class="mactions"><button id="readAll" class="secondary">▶ 順に全部読み上げる</button></div>
+  <ol id="readList" class="readlist"></ol>
+ </section>
  <section class="msec">
   <h3>試作版の注意</h3>
   <p class="muted" style="margin:0">・運行開始のときに、運転手（IDとニックネーム）を選びます。車両は画面の上で選びます。<br>・運行中は、今日の車両と便の選択を隠し、スクロールしなくても操作できる画面になります。運行終了を押すと元に戻ります。<br>・「運行開始」を押した便だけ、人数を入力できます。終了後に直すときは「運行を再開」→ 修正 →「運行終了」の順に押すと、事務所の実績が置き換わります。<br>・電波がないときは乗降実績を端末に保存し、つながった時点で自動で送信します。<br>・予約人数は乗車・降車停留所ごとの参考値です。<br>・「GPS オン」にすると、運行中は次の乗降予定の停留所の約200m手前で「まもなく、○○停留所に到着します」と画面と音声で案内し、その停留所に切り替わります。約50m以内に入ると「○○停留所に到着しました」と案内します。違っていたら ◀ ▶ で直してください。位置は端末の中で使うだけで、記録・送信はしません。<br>・「音声オン／オフ」で音声案内を切り替えられます。iPhone は消音モード（横のスイッチ）や音量を確認してください。<br>・GPSを使っている間は、画面が消えないようにします。<br>・kintone連携は未実装です。<br>・実際の運行には使用せず、架空データで操作を確認してください。</p>
-  <p class="muted">運転手用・連携試作版 v13</p>
+  <p class="muted">運転手用・連携試作版 v15</p>
  </section>
 </nav>
 <script>
 const $=id=>document.getElementById(id);
 // 保存キーは v8 と同じ（v8 の設定・入力途中のデータをそのまま引き継ぐ）
 const KEYS={records:'tozawa_driver_records_v2',states:'tozawa_driver_states_v2',payload:'tozawa_driver_payload_v2',ui:'tozawa_driver_ui_v2',sync:'tozawa_driver_sync_v1',outbox:'tozawa_driver_outbox_v1',drivers:'tozawa_driver_drivers_v1',device:'tozawa_driver_device_v1'};
-const APP_VERSION='v13';
+const APP_VERSION='v15';
 const ROUTE_NAMES={'1':'いきいき百年の里線','2':'やまなみロード線'};
 const POLL_MS=60000;
 const MANUAL_MSG='ファイルから読み込んだデータを表示しています（自動受信は停止中）。メニュー（☰）の「最新の運行データを取得」で自動受信に戻ります。';
@@ -536,9 +552,12 @@ async function flushOutbox(){
 }
 
 // ===== GPS による停留所の自動選択 =====
-// 停留所の座標（停留所位置情報_入力シート.xlsx から作成。2026-11-27 時点）
-// キーは "路線ID:停留所コード"、値は [緯度, 経度, 判定半径(m)]。廃止した上蔵岡（1:7）は含まない
-const STOP_POS={"1:0":[38.737050,140.145989,50],"1:1":[38.735468,140.155557,50],"1:2":[38.732142,140.161752,50],"1:3":[38.728508,140.162059,50],"1:4":[38.725003,140.164982,50],"1:5":[38.726571,140.181322,50],"1:6":[38.726420,140.184673,50],"1:8":[38.732411,140.168442,50],"1:9":[38.731512,140.166909,50],"1:10":[38.727945,140.173407,50],"1:11":[38.733867,140.174254,50],"1:12":[38.733281,140.181749,50],"1:13":[38.738279,140.187092,50],"1:14":[38.726418,140.195683,50],"1:15":[38.744547,140.196634,50],"1:16":[38.735752,140.176145,50],"1:17":[38.744250,140.181967,50],"1:18":[38.749174,140.178765,50],"1:19":[38.755992,140.175781,50],"1:20":[38.763324,140.174890,50],"1:21":[38.766248,140.175486,50],"1:22":[38.748300,140.183804,50],"1:23":[38.753514,140.193147,50],"1:24":[38.757112,140.191580,50],"1:25":[38.764693,140.192168,50],"1:26":[38.769524,140.195115,50],"1:27":[38.773086,140.193481,50],"1:28":[38.776600,140.183418,50],"1:29":[38.779845,140.183883,50],"1:30":[38.783256,140.184335,50],"2:0":[38.737050,140.145989,50],"2:1":[38.738554,140.143140,50],"2:2":[38.742140,140.126503,50],"2:3":[38.743829,140.123679,50],"2:4":[38.739390,140.131680,50],"2:5":[38.737685,140.135496,50],"2:6":[38.728094,140.121013,50],"2:7":[38.723230,140.120977,50],"2:8":[38.721069,140.125579,50],"2:9":[38.717960,140.127917,50],"2:10":[38.714697,140.133679,50],"2:11":[38.707611,140.137336,50],"2:12":[38.705815,140.141319,50],"2:13":[38.702843,140.145422,50],"2:14":[38.696181,140.150857,50],"2:15":[38.693976,140.152812,50],"2:16":[38.689829,140.158203,50],"2:17":[38.688113,140.159673,50],"2:18":[38.681670,140.165259,50],"2:19":[38.678578,140.165354,50],"2:20":[38.676683,140.163765,50],"2:21":[38.662700,140.168951,50],"2:22":[38.655916,140.169512,50]};
+/*STOP_DATA_BEGIN 停留所位置情報_入力シート.xlsx から自動作成（2026-11-28）。手で直さず、ツール\停留所データ反映.ps1 で作り直すこと */
+// キーは "路線ID:停留所コード"。廃止した停留所は含まない
+const STOP_POS={"1:0":[38.737050,140.145989,50],"1:1":[38.735468,140.155557,50],"1:2":[38.732142,140.161752,50],"1:3":[38.728508,140.162059,50],"1:4":[38.725003,140.164982,50],"1:5":[38.726571,140.181322,50],"1:6":[38.726420,140.184673,50],"1:8":[38.732411,140.168442,50],"1:9":[38.731512,140.166909,50],"1:10":[38.727945,140.173407,50],"1:11":[38.733867,140.174254,50],"1:12":[38.733281,140.181749,50],"1:13":[38.738279,140.187092,50],"1:14":[38.726418,140.195683,50],"1:15":[38.744547,140.196634,50],"1:16":[38.735752,140.176145,50],"1:17":[38.744250,140.181967,50],"1:18":[38.749174,140.178765,50],"1:19":[38.755992,140.175781,50],"1:20":[38.763324,140.174890,50],"1:21":[38.766248,140.175486,50],"1:22":[38.748300,140.183804,50],"1:23":[38.753514,140.193147,50],"1:24":[38.757112,140.191580,50],"1:25":[38.764693,140.192168,50],"1:26":[38.769524,140.195115,50],"1:27":[38.773086,140.193481,50],"1:28":[38.776600,140.183418,50],"1:29":[38.779845,140.183883,50],"1:30":[38.783256,140.184335,50],"2:0":[38.737050,140.145989,50],"2:1":[38.738554,140.143140,50],"2:2":[38.742140,140.126503,50],"2:3":[38.743829,140.123679,50],"2:4":[38.739390,140.131680,50],"2:5":[38.737685,140.135496,50],"2:6":[38.728094,140.121013,50],"2:7":[38.723230,140.120977,50],"2:8":[38.721069,140.125579,50],"2:9":[38.717960,140.127917,50],"2:10":[38.714697,140.133679,50],"2:11":[38.707611,140.137336,50],"2:12":[38.705815,140.141319,50],"2:13":[38.702843,140.145422,50],"2:14":[38.696181,140.150857,50],"2:15":[38.693976,140.152812,50],"2:16":[38.689829,140.158203,50],"2:17":[38.688113,140.159673,50],"2:18":[38.681670,140.165259,50],"2:19":[38.678578,140.165354,50],"2:20":[38.676683,140.163765,50],"2:21":[38.662700,140.168951,50],"2:22":[38.655916,140.169512,50]}; // [緯度, 経度, 判定半径(m)]
+const STOP_NAMES={"1:0":"古口駅前","1:1":"子育て応援住宅前","1:2":"真柄","1:3":"高麗館前","1:4":"堀田沢","1:5":"下蔵岡","1:6":"中蔵岡","1:8":"皿島口","1:9":"皿島","1:10":"出舟","1:11":"まごころ荘前","1:12":"岩花口","1:13":"津谷駅前","1:14":"金打坊","1:15":"岩清水","1:16":"中谷総業前","1:17":"津谷","1:18":"農協前","1:19":"濁沢","1:20":"神田ホエルマート前","1:21":"神田簡易郵便局前","1:22":"向名高","1:23":"名高","1:24":"松坂口","1:25":"下松坂","1:26":"松坂","1:27":"野呂田","1:28":"下野口","1:29":"上野口","1:30":"ぽんぽ館","2:0":"古口駅前","2:1":"古口局前","2:2":"猪ノ鼻","2:3":"猪ノ鼻口","2:4":"上台","2:5":"橋元","2:6":"三ツ沢","2:7":"鍋滝","2:8":"下中沢","2:9":"中沢","2:10":"稲村","2:11":"下滝ノ下","2:12":"滝ノ下","2:13":"十二沢","2:14":"本郷","2:15":"旧角川小学校口","2:16":"沢内","2:17":"沢内公民館前","2:18":"上野","2:19":"勝地前","2:20":"勝地上","2:21":"平根","2:22":"やまなみセンター前"};
+const STOP_READING={"1:0":"ふるくちえきまえ","1:1":"こそだておうえんじゅうたくまえ","1:2":"まがら","1:3":"こうらいかんまえ","1:4":"ほったさわ","1:5":"しもくらおか","1:6":"なかくらおか","1:8":"さらしまぐち","1:9":"さらしま","1:10":"でふね","1:11":"まごころそうまえ","1:12":"いわばなぐち","1:13":"つやえきまえ","1:14":"かねうちぼう","1:15":"いわしみず","1:16":"なかたにそうぎょうまえ","1:17":"つや","1:18":"のうきょうまえ","1:19":"にごりさわ","1:20":"じんでんほえーるまーとまえ","1:21":"じんでんかんいゆうびんきょくまえ","1:22":"むかいなだか","1:23":"なだか","1:24":"まつざかぐち","1:25":"しもまつざか","1:26":"まつざか","1:27":"のろだ","1:28":"しものぐち","1:29":"かみのぐち","1:30":"ぽんぽかん","2:0":"ふるくちえきまえ","2:1":"ふるくちきょくまえ","2:2":"いのはな","2:3":"いのはなぐち","2:4":"うわだい","2:5":"はしもと","2:6":"みつざわ","2:7":"なべだき","2:8":"しもなかざわ","2:9":"なかざわ","2:10":"いなむら","2:11":"しもたきのした","2:12":"たきのした","2:13":"じゅうにさわ","2:14":"ほんごう","2:15":"きゅうつのかわしょうがっこうぐち","2:16":"さわうち","2:17":"さわうちこうみんかんまえ","2:18":"うわの","2:19":"かっちまえ","2:20":"かっちうえ","2:21":"ひらね","2:22":"やまなみせんたーまえ"}; // 音声で読み上げるときの読み（空欄の停留所は漢字のまま）
+/*STOP_DATA_END*/
 const GPS_MAX_ACCURACY=60; // 精度がこれより悪い（m）位置では、停留所を切り替えない
 const APPROACH_M=200;      // 次の乗降予定の停留所の、この距離（m）手前で「まもなく」と案内する
 let gpsWatch=null,gpsLast=null,gpsZone=null,gpsErr='',wakeLock=null,wakeBusy=false,toastTimer=null;
@@ -612,10 +631,13 @@ function planText(s){
  if(b)parts.push(`乗車予定は${b}名`);if(al)parts.push(`降車予定は${al}名`);
  return parts.length?parts.join('、')+'です。':'';
 }
+// 音声で読み上げる停留所名（読みが登録されていればその読み。なければ漢字のまま）
+function sayName(key,stopName){const y=STOP_READING[key];return y?y+'停留所':(/停留所$/.test(stopName)?stopName:stopName+'停留所')}
 function announce(kind,s){
  const name=/停留所$/.test(s.stopName)?s.stopName:s.stopName+'停留所',plan=planText(s);
- if(kind==='approach'){showToast('approach',`まもなく、${name}に到着します`,plan);speak(`まもなく、${name}に到着します。${plan}`)}
- else{showToast('arrive',`${name}に到着しました`,plan);speak(`${name}に到着しました。`)}
+ const say=sayName(`${payload?.routeId||sync.routeId}:${s.stopCode}`,s.stopName);
+ if(kind==='approach'){showToast('approach',`まもなく、${name}に到着します`,plan);speak(`まもなく、${say}に到着します。${plan}`)}
+ else{showToast('arrive',`${name}に到着しました`,plan);speak(`${say}に到着しました。`)}
  try{navigator.vibrate&&navigator.vibrate(kind==='arrive'?[200,100,200]:300)}catch(e){}
 }
 function showToast(kind,main,sub){
@@ -687,6 +709,35 @@ $('updateBtn').onclick=async()=>{
   btn.disabled=false;btn.textContent='最新版に更新';
  }
 };
+
+// ===== 停留所の読み上げ確認（メニュー） =====
+let readRoute=String(sync.routeId||'1'),readPlaying=false;
+function stopKeysOf(rid){return Object.keys(STOP_NAMES).filter(k=>k.split(':')[0]===rid).sort((a,b)=>Number(a.split(':')[1])-Number(b.split(':')[1]))}
+function phraseFor(k){return `${sayName(k,STOP_NAMES[k])}に到着しました。`}
+// 確認用の読み上げ（音声オフの設定でも、ボタンを押したときは読み上げる）
+function sayNow(text,onend){
+ if(!canSpeak()){alert('この端末・ブラウザでは音声を使えません。');return}
+ try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';if(jaVoice)u.voice=jaVoice;u.rate=1;u.volume=1;if(onend){u.onend=onend;u.onerror=onend}speechSynthesis.speak(u)}catch(e){console.error(e)}
+}
+function renderReadList(){
+ ['1','2'].forEach(id=>$('rd'+id).setAttribute('aria-pressed',String(readRoute===id)));
+ const keys=stopKeysOf(readRoute);
+ $('readList').innerHTML=keys.length?keys.map(k=>`<li data-k="${esc(k)}"><span class="no">${esc(k.split(':')[1])}</span><span class="nm">${esc(STOP_NAMES[k])}${STOP_READING[k]?`<small>読み：${esc(STOP_READING[k])}</small>`:''}</span><button class="secondary" data-say="${esc(k)}" aria-label="${esc(STOP_NAMES[k])}を読み上げる">▶</button></li>`).join(''):'<li>停留所の一覧がありません。</li>';
+ $('readAll').textContent=readPlaying?'■ 止める':'▶ 順に全部読み上げる';
+}
+function markReading(k){document.querySelectorAll('#readList li').forEach(li=>li.classList.toggle('now',li.dataset.k===k))}
+function stopReading(){readPlaying=false;try{canSpeak()&&speechSynthesis.cancel()}catch(e){}markReading('');renderReadList()}
+function playFrom(keys,i){
+ if(!readPlaying)return;
+ if(i>=keys.length){readPlaying=false;markReading('');renderReadList();return}
+ markReading(keys[i]);
+ const li=document.querySelector(`#readList li[data-k="${keys[i]}"]`);if(li)li.scrollIntoView({block:'nearest'});
+ sayNow(phraseFor(keys[i]),()=>setTimeout(()=>playFrom(keys,i+1),500));
+}
+$('rd1').onclick=()=>{stopReading();readRoute='1';renderReadList()};
+$('rd2').onclick=()=>{stopReading();readRoute='2';renderReadList()};
+$('readList').onclick=e=>{const b=e.target.closest('[data-say]');if(!b)return;stopReading();const k=b.dataset.say;markReading(k);sayNow(phraseFor(k),()=>markReading(''))};
+$('readAll').onclick=()=>{if(readPlaying){stopReading();return}readPlaying=true;renderReadList();playFrom(stopKeysOf(readRoute),0)};
 
 // ===== 運転手の一覧と選択 =====
 function driverLabel(o){return o&&o.driverId?`${o.driverId}　${o.driverNickname||''}`.trim():''}
@@ -803,7 +854,7 @@ $('exportCsv').onclick=()=>{const st=stateOf();const rows=[['利用日','車両'
 $('exportJson').onclick=()=>{download(fileBase()+'.json',JSON.stringify(buildResult(currentTrip),null,2),'application/json;charset=utf-8')};
 
 // ===== 起動時 =====
-$('curVersion').textContent=APP_VERSION;
+$('curVersion').textContent=APP_VERSION;renderReadList();
 fillSettings();
 // 保存してあるデータは、今選んでいる車両のものだけ使う（ファイル読み込みのデータは除く）
 const usable=savedPayload&&!validatePayload(savedPayload,true)&&(savedPayload.source==='file'||!savedPayload.routeId||String(savedPayload.routeId)===String(sync.routeId));
